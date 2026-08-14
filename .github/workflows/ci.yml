@@ -13,6 +13,7 @@ on:
       - mission-009-authorization-enforcement
       - mission-010-business-domain-core
       - mission-011-workflow-engine
+      - mission-012-queue-worker-engine
   pull_request:
 
 jobs:
@@ -35,5 +36,5 @@ jobs:
           test -f README.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
-      - name: Run runtime, domain, persistence, auth, authorization, business, and workflow tests
+      - name: Run runtime, domain, persistence, auth, authorization, business, workflow, and queue tests
         run: npm test
