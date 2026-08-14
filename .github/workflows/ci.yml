@@ -23,6 +23,7 @@ on:
       - mission-019-orchestration-reliability
       - mission-020-durable-orchestration-state
       - mission-021-durable-recovery-crash-resume
+      - mission-022-recovery-aware-orchestration
   pull_request:
 
 jobs:
