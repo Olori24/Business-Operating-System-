@@ -14,6 +14,7 @@ test('recovery-aware execution resumes and completes a recoverable execution', a
   const result = await orchestrator.execute('exec-1', async () => 'done');
 
   assert.equal(result.result, 'done');
+  assert.equal(result.reused, false);
   assert.equal(result.execution.status, 'completed');
   assert.equal(result.execution.recoveryCount, 1);
   assert.equal(result.execution.attempts, 2);
@@ -41,5 +42,14 @@ test('completed executions are not re-executed', async () => {
   const orchestrator = new RecoveryAwareOrchestrator({ state, recovery });
   await state.create({ id: 'exec-3', status: 'completed', result: 'already-done' });
 
-  await assert.rejects(() => orchestrator.execute('exec-3', async () => 'unexpected'), /EXECUTION_NOT_RESUMABLE/);
+  let calls = 0;
+  const result = await orchestrator.execute('exec-3', async () => {
+    calls += 1;
+    return 'unexpected';
+  });
+
+  assert.equal(calls, 0);
+  assert.equal(result.reused, true);
+  assert.equal(result.result, 'already-done');
+  assert.equal(result.execution.status, 'completed');
 });
