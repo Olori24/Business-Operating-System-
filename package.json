@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node apps/api/server.js",
     "start": "node apps/api/server.js",
-    "test": "node --test apps/api/test/*.test.js modules/identity/test/*.test.js packages/persistence/test/*.test.js"
+    "test": "node --test apps/api/test/*.test.js modules/identity/test/*.test.js packages/persistence/test/*.test.js packages/auth/test/*.test.js"
   },
   "engines": {
     "node": ">=22"
