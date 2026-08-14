@@ -19,6 +19,7 @@ on:
       - mission-015-event-integration
       - mission-016-event-driven-queue-integration
       - mission-017-event-driven-scheduler-integration
+      - mission-018-event-driven-workflow-orchestration-v2
   pull_request:
 
 jobs:
@@ -41,5 +42,5 @@ jobs:
           test -f README.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
-      - name: Run runtime, domain, persistence, auth, authorization, business, workflow, queue, scheduler, and event tests
+      - name: Run repository test suite
         run: npm test
