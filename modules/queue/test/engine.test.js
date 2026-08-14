@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { InMemoryRepository } = require('../../packages/persistence/repository');
+const { InMemoryRepository } = require('../../../packages/persistence/repository');
 const { WorkflowEngine } = require('../../workflow/engine');
-const { createTask } = require('../business/domain');
+const { createTask } = require('../../business/domain');
 const { QueueWorkerEngine } = require('../engine');
 
 test('enqueue and claim a task', async () => {
