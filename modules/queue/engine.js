@@ -1,8 +1,13 @@
 class QueueWorkerEngine {
-  constructor({ repository, workflowEngine }) {
+  constructor({ repository, workflowEngine, eventBus = null }) {
     if (!repository || !workflowEngine) throw new TypeError('QueueWorkerEngine requires repository and workflowEngine');
     this.repository = repository;
     this.workflowEngine = workflowEngine;
+    this.eventBus = eventBus;
+    this.unsubscribe = null;
+    if (eventBus) {
+      this.unsubscribe = eventBus.subscribe('task.completed', (event) => this.handleTaskCompleted(event));
+    }
   }
 
   async enqueue(taskId, processId) {
@@ -11,6 +16,12 @@ class QueueWorkerEngine {
     const existing = await this.repository.find('queue', taskId);
     if (existing && ['queued', 'processing'].includes(existing.status)) return existing;
     return this.repository.save('queue', taskId, { id: taskId, processId, status: 'queued', attempts: 0 });
+  }
+
+  async handleTaskCompleted(event) {
+    if (!event || !event.nextTaskId) return null;
+    if (!event.processId) throw new Error('PROCESS_ID_REQUIRED');
+    return this.enqueue(event.nextTaskId, event.processId);
   }
 
   async claim(taskId) {
