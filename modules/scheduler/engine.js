@@ -1,8 +1,17 @@
 class SchedulerEngine {
-  constructor({ repository, queueEngine }) {
+  constructor({ repository, queueEngine, eventBus = null }) {
     if (!repository || !queueEngine) throw new TypeError('SchedulerEngine requires repository and queueEngine');
     this.repository = repository;
     this.queueEngine = queueEngine;
+    this.eventBus = eventBus;
+    this.unsubscribe = null;
+    if (eventBus) {
+      this.unsubscribe = eventBus.subscribe('task.schedule_requested', (event) => this.handleScheduleRequested(event));
+    }
+  }
+
+  async publish(event) {
+    if (this.eventBus) await this.eventBus.publish(event);
   }
 
   async schedule({ id, taskId, processId, runAt }) {
@@ -13,7 +22,14 @@ class SchedulerEngine {
     if (!Number.isFinite(timestamp)) throw new Error('INVALID_RUN_AT');
     const existing = await this.repository.find('schedule', id);
     if (existing) throw new Error('SCHEDULE_EXISTS');
-    return this.repository.save('schedule', id, { id, taskId, processId, runAt: new Date(timestamp).toISOString(), status: 'scheduled' });
+    const result = await this.repository.save('schedule', id, { id, taskId, processId, runAt: new Date(timestamp).toISOString(), status: 'scheduled' });
+    await this.publish({ type: 'schedule.created', scheduleId: result.id, taskId: result.taskId, processId: result.processId, runAt: result.runAt });
+    return result;
+  }
+
+  async handleScheduleRequested(event) {
+    if (!event || !event.scheduleId || !event.taskId || !event.processId || !event.runAt) return null;
+    return this.schedule({ id: event.scheduleId, taskId: event.taskId, processId: event.processId, runAt: event.runAt });
   }
 
   async dispatchDue({ now = new Date() } = {}) {
@@ -26,6 +42,7 @@ class SchedulerEngine {
       await this.queueEngine.enqueue(item.taskId, item.processId);
       item.status = 'dispatched';
       await this.repository.save('schedule', item.id, item);
+      await this.publish({ type: 'schedule.dispatched', scheduleId: item.id, taskId: item.taskId, processId: item.processId });
       dispatched.push(item);
     }
     return dispatched;
