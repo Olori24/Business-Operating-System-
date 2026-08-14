@@ -10,8 +10,7 @@ class AuthService {
 
   async createSession({ userId, organizationId }) {
     const user = await this.userRepository.find('user', userId);
-    if (!user) return null;
-    if (user.status !== 'active') return null;
+    if (!user || user.status !== 'active') return null;
 
     const token = await this.tokenGenerator.generate();
     const session = {
@@ -27,12 +26,8 @@ class AuthService {
   }
 
   async authenticate(token) {
-    if (!token) return null;
-    const sessions = this.sessionRepository.records;
-    for (const session of sessions.values()) {
-      if (session.token === token) return { ...session };
-    }
-    return null;
+    if (!token || typeof this.sessionRepository.findByToken !== 'function') return null;
+    return this.sessionRepository.findByToken(token);
   }
 }
 
