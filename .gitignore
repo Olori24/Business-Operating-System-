@@ -1,0 +1,29 @@
+# Business Operating System
+# node
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Build output
+.next/
+dist/
+build/
+out/
+coverage/
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
