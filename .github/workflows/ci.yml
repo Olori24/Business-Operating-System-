@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main, mission-003-foundation]
+  pull_request:
+
+jobs:
+  repository-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify repository structure
+        run: |
+          test -d apps
+          test -d packages
+          test -d modules
+          test -d agents
+          test -d docs
+          test -f README.md
+          test -f SECURITY.md
+          test -f CONTRIBUTING.md
