@@ -15,6 +15,8 @@ on:
       - mission-011-workflow-engine
       - mission-012-queue-worker-engine
       - mission-013-scheduler-engine
+      - mission-014-event-bus-work
+      - mission-015-event-integration
   pull_request:
 
 jobs:
@@ -37,5 +39,5 @@ jobs:
           test -f README.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
-      - name: Run runtime, domain, persistence, auth, authorization, business, workflow, queue, and scheduler tests
+      - name: Run runtime, domain, persistence, auth, authorization, business, workflow, queue, scheduler, and event tests
         run: npm test

@@ -1,9 +1,14 @@
 const VALID_STATUSES = new Set(['pending', 'in_progress', 'completed']);
 
 class WorkflowEngine {
-  constructor({ repository }) {
+  constructor({ repository, eventBus = null }) {
     if (!repository) throw new TypeError('WorkflowEngine requires a repository');
     this.repository = repository;
+    this.eventBus = eventBus;
+  }
+
+  async publish(event) {
+    if (this.eventBus) await this.eventBus.publish(event);
   }
 
   async startTask({ taskId, processId }) {
@@ -13,7 +18,14 @@ class WorkflowEngine {
     if (task.status === 'completed') throw new Error('TASK_ALREADY_COMPLETED');
 
     const updated = { ...task, status: 'in_progress' };
-    return this.repository.save('task', task.id, updated);
+    const result = await this.repository.save('task', task.id, updated);
+    await this.publish({
+      type: 'task.started',
+      taskId: result.id,
+      processId: result.processId,
+      status: result.status
+    });
+    return result;
   }
 
   async completeTask({ taskId, processId }) {
@@ -23,7 +35,14 @@ class WorkflowEngine {
     if (task.status === 'completed') throw new Error('TASK_ALREADY_COMPLETED');
 
     const updated = { ...task, status: 'completed' };
-    return this.repository.save('task', task.id, updated);
+    const result = await this.repository.save('task', task.id, updated);
+    await this.publish({
+      type: 'task.completed',
+      taskId: result.id,
+      processId: result.processId,
+      status: result.status
+    });
+    return result;
   }
 
   async getTask(taskId) {
