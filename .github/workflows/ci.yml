@@ -22,6 +22,7 @@ on:
       - mission-018-event-driven-workflow-orchestration-v2
       - mission-019-orchestration-reliability
       - mission-020-durable-orchestration-state
+      - mission-021-durable-recovery-crash-resume
   pull_request:
 
 jobs:

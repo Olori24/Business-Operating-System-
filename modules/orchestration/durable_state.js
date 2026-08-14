@@ -12,6 +12,7 @@ class DurableOrchestrationState {
       ...execution,
       status: execution.status || 'pending',
       attempts: Number.isInteger(execution.attempts) ? execution.attempts : 0,
+      recoveryCount: Number.isInteger(execution.recoveryCount) ? execution.recoveryCount : 0,
       updatedAt: execution.updatedAt || new Date().toISOString()
     });
   }
@@ -19,6 +20,10 @@ class DurableOrchestrationState {
   async get(id) {
     if (!id) throw new TypeError('Execution id is required');
     return this.repository.find('orchestration_execution', id);
+  }
+
+  async all() {
+    return this.repository.all('orchestration_execution');
   }
 
   async update(id, patch) {
