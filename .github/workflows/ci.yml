@@ -21,6 +21,7 @@ on:
       - mission-017-event-driven-scheduler-integration
       - mission-018-event-driven-workflow-orchestration-v2
       - mission-019-orchestration-reliability
+      - mission-020-durable-orchestration-state
   pull_request:
 
 jobs:
