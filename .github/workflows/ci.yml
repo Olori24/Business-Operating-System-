@@ -20,6 +20,7 @@ on:
       - mission-016-event-driven-queue-integration
       - mission-017-event-driven-scheduler-integration
       - mission-018-event-driven-workflow-orchestration-v2
+      - mission-019-orchestration-reliability
   pull_request:
 
 jobs:
