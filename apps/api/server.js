@@ -21,10 +21,16 @@ function requestHandler(req, res) {
   res.end(JSON.stringify({ error: 'Not found' }));
 }
 
-const server = http.createServer(requestHandler);
+function startServer() {
+  const server = http.createServer(requestHandler);
+  server.listen(port, () => {
+    console.log(`BOS API listening on port ${port}`);
+  });
+  return server;
+}
 
-server.listen(port, () => {
-  console.log(`BOS API listening on port ${port}`);
-});
+if (require.main === module) {
+  startServer();
+}
 
-module.exports = { requestHandler };
+module.exports = { requestHandler, startServer };
