@@ -10,9 +10,7 @@ test('recovery-aware execution resumes and completes a recoverable execution', a
   const recovery = new DurableOrchestrationRecovery({ state });
   const orchestrator = new RecoveryAwareOrchestrator({ state, recovery });
   await state.create({ id: 'exec-1', status: 'failed', attempts: 1 });
-
   const result = await orchestrator.execute('exec-1', async () => 'done');
-
   assert.equal(result.result, 'done');
   assert.equal(result.reused, false);
   assert.equal(result.execution.status, 'completed');
@@ -25,11 +23,7 @@ test('recovery-aware execution persists failure state', async () => {
   const recovery = new DurableOrchestrationRecovery({ state });
   const orchestrator = new RecoveryAwareOrchestrator({ state, recovery });
   await state.create({ id: 'exec-2', status: 'failed' });
-
-  await assert.rejects(() => orchestrator.execute('exec-2', async () => {
-    throw new Error('boom');
-  }), /boom/);
-
+  await assert.rejects(() => orchestrator.execute('exec-2', async () => { throw new Error('boom'); }), /boom/);
   const execution = await state.get('exec-2');
   assert.equal(execution.status, 'failed');
   assert.equal(execution.error, 'boom');
@@ -41,15 +35,31 @@ test('completed executions are not re-executed', async () => {
   const recovery = new DurableOrchestrationRecovery({ state });
   const orchestrator = new RecoveryAwareOrchestrator({ state, recovery });
   await state.create({ id: 'exec-3', status: 'completed', result: 'already-done' });
-
   let calls = 0;
-  const result = await orchestrator.execute('exec-3', async () => {
-    calls += 1;
-    return 'unexpected';
-  });
-
+  const result = await orchestrator.execute('exec-3', async () => { calls += 1; return 'unexpected'; });
   assert.equal(calls, 0);
   assert.equal(result.reused, true);
   assert.equal(result.result, 'already-done');
   assert.equal(result.execution.status, 'completed');
+});
+
+test('idempotency key is persisted and reused', async () => {
+  const state = new DurableOrchestrationState({ repository: new InMemoryRepository() });
+  const recovery = new DurableOrchestrationRecovery({ state });
+  const orchestrator = new RecoveryAwareOrchestrator({ state, recovery });
+  await state.create({ id: 'exec-4', status: 'pending' });
+  const first = await orchestrator.execute('exec-4', async () => 'done', { idempotencyKey: 'idem-4' });
+  const second = await orchestrator.execute('exec-4', async () => { throw new Error('must-not-run'); }, { idempotencyKey: 'idem-4' });
+  assert.equal(first.result, 'done');
+  assert.equal(second.reused, true);
+  assert.equal(second.idempotencyKey, 'idem-4');
+});
+
+test('mismatched idempotency keys are rejected', async () => {
+  const state = new DurableOrchestrationState({ repository: new InMemoryRepository() });
+  const recovery = new DurableOrchestrationRecovery({ state });
+  const orchestrator = new RecoveryAwareOrchestrator({ state, recovery });
+  await state.create({ id: 'exec-5', status: 'pending' });
+  await orchestrator.execute('exec-5', async () => 'done', { idempotencyKey: 'idem-5' });
+  await assert.rejects(() => orchestrator.execute('exec-5', async () => 'bad', { idempotencyKey: 'different' }), /IDEMPOTENCY_KEY_MISMATCH/);
 });
