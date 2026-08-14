@@ -1,24 +1,30 @@
 const http = require('node:http');
+const { jsonResponse } = require('./http');
 
 const port = Number(process.env.PORT || 3000);
+const apiVersion = 'v1';
 
 function requestHandler(req, res) {
   if (req.method === 'GET' && req.url === '/health') {
-    const body = JSON.stringify({ status: 'ok', service: 'bos-api' });
-    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-    res.end(body);
+    jsonResponse(res, 200, { status: 'ok', service: 'bos-api' });
     return;
   }
 
   if (req.method === 'GET' && req.url === '/') {
-    const body = JSON.stringify({ name: 'Business Operating System', status: 'running' });
-    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-    res.end(body);
+    jsonResponse(res, 200, { name: 'Business Operating System', status: 'running' });
     return;
   }
 
-  res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ error: 'Not found' }));
+  if (req.method === 'GET' && req.url === '/api/v1/meta') {
+    jsonResponse(res, 200, {
+      name: 'Business Operating System',
+      service: 'bos-api',
+      apiVersion
+    });
+    return;
+  }
+
+  jsonResponse(res, 404, { error: 'Not found' });
 }
 
 function startServer() {
