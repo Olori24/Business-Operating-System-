@@ -9,6 +9,7 @@ on:
       - mission-005-api-contract
       - mission-006-multitenant-foundation
       - mission-007-persistence-foundation
+      - mission-008-auth-foundation
   pull_request:
 
 jobs:
@@ -31,5 +32,5 @@ jobs:
           test -f README.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
-      - name: Run runtime, domain, and persistence tests
+      - name: Run runtime, domain, persistence, and auth tests
         run: npm test
