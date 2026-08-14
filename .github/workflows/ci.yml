@@ -11,6 +11,7 @@ on:
       - mission-007-persistence-foundation
       - mission-008-auth-foundation
       - mission-009-authorization-enforcement
+      - mission-010-business-domain-core
   pull_request:
 
 jobs:
@@ -33,5 +34,5 @@ jobs:
           test -f README.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
-      - name: Run runtime, domain, persistence, auth, and authorization tests
+      - name: Run runtime, domain, persistence, auth, authorization, and business tests
         run: npm test
