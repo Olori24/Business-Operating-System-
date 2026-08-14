@@ -13,6 +13,10 @@ class RecoveryAwareOrchestrator {
     let execution = await this.state.get(id);
     if (!execution) throw new Error('EXECUTION_NOT_FOUND');
 
+    if (execution.status === 'completed') {
+      return { execution, result: execution.result, reused: true };
+    }
+
     if (execution.status !== 'running' && execution.status !== 'resuming') {
       const result = await this.recovery.recover(id);
       if (!result.recovered) throw new Error('EXECUTION_NOT_RESUMABLE');
@@ -30,7 +34,7 @@ class RecoveryAwareOrchestrator {
         status: 'completed',
         result
       });
-      return { execution: completed, result };
+      return { execution: completed, result, reused: false };
     } catch (error) {
       const failed = await this.state.update(id, {
         status: 'failed',
