@@ -26,7 +26,7 @@ class QueueWorkerEngine {
     const item = await this.repository.find('queue', taskId);
     if (!item) throw new Error('QUEUE_ITEM_NOT_FOUND');
     if (item.status !== 'processing') throw new Error('QUEUE_ITEM_NOT_COMPLETABLE');
-    await this.workflowEngine.completeTask(taskId, item.processId);
+    await this.workflowEngine.completeTask({ taskId, processId: item.processId });
     item.status = 'completed';
     return this.repository.save('queue', taskId, item);
   }
