@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { InMemoryRepository } = require('../repository');
-const { createOrganization, createUser, createRoleAssignment, createWorkspace } = require('../identity/domain');
+const { createOrganization, createUser, createRoleAssignment, createWorkspace } = require('../../../modules/identity/domain');
 
 test('stores and retrieves a domain record without sharing mutable state', async () => {
   const repository = new InMemoryRepository();
