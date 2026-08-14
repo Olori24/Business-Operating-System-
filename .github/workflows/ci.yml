@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, mission-003-foundation, mission-004-runtime-foundation]
+    branches: [main, mission-003-foundation, mission-004-runtime-foundation, mission-005-api-contract]
   pull_request:
 
 jobs:
