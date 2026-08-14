@@ -28,6 +28,21 @@ test('health endpoint reports a healthy BOS API', async () => {
   });
 });
 
+test('API metadata exposes the current contract version', async () => {
+  const response = await invoke('GET', '/api/v1/meta');
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body), {
+    name: 'Business Operating System',
+    service: 'bos-api',
+    apiVersion: 'v1'
+  });
+});
+
+test('JSON responses declare the expected content type', async () => {
+  const response = await invoke('GET', '/health');
+  assert.equal(response.headers['content-type'], 'application/json; charset=utf-8');
+});
+
 test('unknown routes return 404', async () => {
   const response = await invoke('GET', '/missing');
   assert.equal(response.statusCode, 404);
