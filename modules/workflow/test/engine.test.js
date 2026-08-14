@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { InMemoryRepository } = require('../../packages/persistence/repository');
+const { InMemoryRepository } = require('../../../packages/persistence/repository');
 const { WorkflowEngine } = require('../engine');
 
 test('starts a pending task', async () => {
