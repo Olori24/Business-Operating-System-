@@ -1,0 +1,14 @@
+{
+  "name": "business-operating-system",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Business Operating System application workspace",
+  "scripts": {
+    "dev": "node apps/api/server.js",
+    "start": "node apps/api/server.js",
+    "test": "node --test apps/api/test/server.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
