@@ -18,6 +18,7 @@ on:
       - mission-014-event-bus-work
       - mission-015-event-integration
       - mission-016-event-driven-queue-integration
+      - mission-017-event-driven-scheduler-integration
   pull_request:
 
 jobs:
