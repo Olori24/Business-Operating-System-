@@ -2,7 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main, mission-003-foundation, mission-004-runtime-foundation, mission-005-api-contract]
+    branches:
+      - main
+      - mission-003-foundation
+      - mission-004-runtime-foundation
+      - mission-005-api-contract
+      - mission-006-multitenant-foundation
   pull_request:
 
 jobs:
@@ -25,5 +30,5 @@ jobs:
           test -f README.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
-      - name: Run runtime tests
+      - name: Run runtime and domain tests
         run: npm test
