@@ -14,6 +14,12 @@ class InMemoryRepository {
     return value === undefined ? null : structuredClone(value);
   }
 
+  async all(type) {
+    return [...this.records.entries()]
+      .filter(([key]) => key.startsWith(`${type}:`))
+      .map(([, value]) => structuredClone(value));
+  }
+
   async delete(type, id) {
     return this.records.delete(`${type}:${id}`);
   }
