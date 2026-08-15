@@ -6,6 +6,7 @@ on:
       - main
       - mission-025-production-persistence-foundation
       - mission-027-distributed-worker-runtime
+      - mission-028-durable-worker-leases
   pull_request:
 
 jobs:
