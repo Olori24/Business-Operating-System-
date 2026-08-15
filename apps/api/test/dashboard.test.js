@@ -26,6 +26,7 @@ test('serves customer dashboard', async () => {
   assert.equal(response.statusCode, 200);
   assert.match(response.contentType, /text\/html/);
   assert.match(response.body, /Business Workspace/);
+  assert.match(response.body, /BOS/);
 });
 
 test('serves dashboard API health endpoint', async () => {
