@@ -1,41 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    {
-      "source": "/dashboard",
-      "destination": "/api/dashboard"
-    },
-    {
-      "source": "/workflows",
-      "destination": "/api/workflows"
-    },
-    {
-      "source": "/ai-employees",
-      "destination": "/api/ai-employees"
-    },
-    {
-      "source": "/integrations",
-      "destination": "/api/integrations"
-    },
-    {
-      "source": "/execution",
-      "destination": "/api/execution"
-    },
-    {
-      "source": "/analytics",
-      "destination": "/api/analytics"
-    },
-    {
-      "source": "/billing",
-      "destination": "/api/billing"
-    },
-    {
-      "source": "/support",
-      "destination": "/api/support"
-    },
-    {
-      "source": "/launch",
-      "destination": "/api/launch"
-    }
+    { "source": "/dashboard", "destination": "/apps/dashboard/index.html" },
+    { "source": "/workflows", "destination": "/apps/dashboard/workflows.html" },
+    { "source": "/ai-employees", "destination": "/apps/dashboard/ai-employees.html" },
+    { "source": "/integrations", "destination": "/apps/dashboard/integrations.html" },
+    { "source": "/execution", "destination": "/apps/dashboard/execution.html" },
+    { "source": "/analytics", "destination": "/apps/dashboard/analytics.html" },
+    { "source": "/billing", "destination": "/apps/dashboard/billing.html" },
+    { "source": "/support", "destination": "/apps/dashboard/support.html" },
+    { "source": "/launch", "destination": "/apps/dashboard/launch-readiness.html" }
   ]
 }
