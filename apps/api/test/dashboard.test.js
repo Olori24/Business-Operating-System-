@@ -25,7 +25,7 @@ test('serves customer dashboard', async () => {
   const response = await request('/dashboard');
   assert.equal(response.statusCode, 200);
   assert.match(response.contentType, /text\/html/);
-  assert.match(response.body, /Business Operating System/);
+  assert.match(response.body, /Business Workspace/);
 });
 
 test('serves dashboard API health endpoint', async () => {
