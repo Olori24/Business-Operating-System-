@@ -25,7 +25,8 @@ test('serves customer dashboard', async () => {
   const response = await request('/dashboard');
   assert.equal(response.statusCode, 200);
   assert.match(response.contentType, /text\/html/);
-  assert.match(response.body, /Business Operating System/);
+  assert.match(response.body, /Business Workspace/);
+  assert.match(response.body, /BOS/);
 });
 
 test('serves dashboard API health endpoint', async () => {
@@ -33,4 +34,14 @@ test('serves dashboard API health endpoint', async () => {
   assert.equal(response.statusCode, 200);
   assert.match(response.contentType, /application\/json/);
   assert.deepEqual(JSON.parse(response.body).status, 'ok');
+});
+
+test('dashboard exposes business workspace onboarding controls', async () => {
+  const response = await request('/dashboard');
+  assert.equal(response.statusCode, 200);
+  assert.match(response.body, /Create your workspace/);
+  assert.match(response.body, /businessName/);
+  assert.match(response.body, /industry/);
+  assert.match(response.body, /teamSize/);
+  assert.match(response.body, /workspaceForm/);
 });
