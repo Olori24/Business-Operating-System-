@@ -1,6 +1,7 @@
 class EventBus {
-  constructor() {
+  constructor({ store } = {}) {
     this.handlers = new Map();
+    this.store = store;
   }
 
   subscribe(eventType, handler) {
@@ -13,8 +14,10 @@ class EventBus {
 
   async publish(event) {
     if (!event || !event.type) throw new TypeError('INVALID_EVENT');
-    const handlers = this.handlers.get(event.type) || new Set();
-    for (const handler of handlers) await handler(event);
+    const persisted = this.store ? await this.store.append(event) : event;
+    const handlers = this.handlers.get(persisted.type) || new Set();
+    for (const handler of handlers) await handler(persisted);
+    return persisted;
   }
 }
 
