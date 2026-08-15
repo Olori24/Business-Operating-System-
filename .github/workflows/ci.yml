@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - mission-030-observability
+      - phase-061-070-commercial-platform
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
