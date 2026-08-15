@@ -9,6 +9,7 @@ const apiVersion = 'v1';
 const dashboardPath = path.join(__dirname, '..', 'dashboard', 'index.html');
 const workflowBuilderPath = path.join(__dirname, '..', 'dashboard', 'workflows.html');
 const aiEmployeePath = path.join(__dirname, '..', 'dashboard', 'ai-employees.html');
+const integrationPath = path.join(__dirname, '..', 'dashboard', 'integrations.html');
 
 function htmlResponse(res, filePath) {
   try {
@@ -28,43 +29,22 @@ function requestHandler(req, res) {
     jsonResponse(res, 200, { status: 'ok', service: 'bos-api', requestId });
     return;
   }
-
-  if (req.method === 'GET' && (req.url === '/' || req.url === '/dashboard')) {
-    htmlResponse(res, dashboardPath);
-    return;
-  }
-
-  if (req.method === 'GET' && (req.url === '/workflows' || req.url === '/dashboard/workflows')) {
-    htmlResponse(res, workflowBuilderPath);
-    return;
-  }
-
-  if (req.method === 'GET' && (req.url === '/ai-employees' || req.url === '/dashboard/ai-employees')) {
-    htmlResponse(res, aiEmployeePath);
-    return;
-  }
-
+  if (req.method === 'GET' && (req.url === '/' || req.url === '/dashboard')) { htmlResponse(res, dashboardPath); return; }
+  if (req.method === 'GET' && (req.url === '/workflows' || req.url === '/dashboard/workflows')) { htmlResponse(res, workflowBuilderPath); return; }
+  if (req.method === 'GET' && (req.url === '/ai-employees' || req.url === '/dashboard/ai-employees')) { htmlResponse(res, aiEmployeePath); return; }
+  if (req.method === 'GET' && (req.url === '/integrations' || req.url === '/dashboard/integrations')) { htmlResponse(res, integrationPath); return; }
   if (req.method === 'GET' && req.url === '/api/v1/meta') {
-    jsonResponse(res, 200, {
-      name: 'Business Operating System',
-      service: 'bos-api',
-      apiVersion,
-      requestId
-    });
+    jsonResponse(res, 200, { name: 'Business Operating System', service: 'bos-api', apiVersion, requestId });
     return;
   }
-
   jsonResponse(res, 404, errorPayload('NOT_FOUND', 'Route not found', requestId));
 }
 
 function startServer() {
   const server = http.createServer(requestHandler);
-  server.listen(port, () => {
-    console.log(`BOS API listening on port ${port}`);
-  });
+  server.listen(port, () => console.log(`BOS API listening on port ${port}`));
   return server;
 }
 
 if (require.main === module) startServer();
-
 module.exports = { requestHandler, startServer };
