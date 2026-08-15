@@ -7,13 +7,13 @@ test('registers versioned integration adapters', async () => {
   const execute = async x => x;
   r.register({ name: 'crm', version: '1.2.0', execute, actions: ['sync'] });
   assert.deepEqual(r.list(), [{ name: 'crm', version: '1.2.0' }]);
-  assert.equal(await r.invoke('crm', 'sync', 'ok', { tenantId: 't1' }), 'ok');
+  assert.deepEqual(await r.invoke('crm', 'sync', 'ok', { tenantId: 't1' }), { action: 'sync', payload: 'ok', context: { tenantId: 't1' } });
 });
 
-test('requires tenant context for invocation', () => {
+test('requires tenant context for invocation', async () => {
   const r = new IntegrationRegistry();
   r.register({ name: 'crm', execute: async x => x });
-  assert.throws(() => r.invoke('crm', 'sync', {}, {}), /TENANT_CONTEXT_REQUIRED/);
+  await assert.rejects(() => r.invoke('crm', 'sync', {}, {}), /TENANT_CONTEXT_REQUIRED/);
 });
 
 test('rejects duplicate or invalid registrations', () => {
