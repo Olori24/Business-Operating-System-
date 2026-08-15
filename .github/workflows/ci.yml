@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - mission-025-production-persistence-foundation
+      - mission-027-distributed-worker-runtime
   pull_request:
 
 jobs:
