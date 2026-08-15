@@ -8,6 +8,7 @@ const port = Number(process.env.PORT || 3000);
 const apiVersion = 'v1';
 const dashboardPath = path.join(__dirname, '..', 'dashboard', 'index.html');
 const workflowBuilderPath = path.join(__dirname, '..', 'dashboard', 'workflows.html');
+const aiEmployeePath = path.join(__dirname, '..', 'dashboard', 'ai-employees.html');
 
 function htmlResponse(res, filePath) {
   try {
@@ -35,6 +36,11 @@ function requestHandler(req, res) {
 
   if (req.method === 'GET' && (req.url === '/workflows' || req.url === '/dashboard/workflows')) {
     htmlResponse(res, workflowBuilderPath);
+    return;
+  }
+
+  if (req.method === 'GET' && (req.url === '/ai-employees' || req.url === '/dashboard/ai-employees')) {
+    htmlResponse(res, aiEmployeePath);
     return;
   }
 

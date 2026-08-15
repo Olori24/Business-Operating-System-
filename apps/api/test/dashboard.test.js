@@ -57,3 +57,14 @@ test('serves workflow builder with core workflow controls', async () => {
   assert.match(response.body, /Save workflow/);
   assert.match(response.body, /workflow/);
 });
+
+test('serves AI employee configuration with governance controls', async () => {
+  const response = await request('/ai-employees');
+  assert.equal(response.statusCode, 200);
+  assert.match(response.contentType, /text\/html/);
+  assert.match(response.body, /BOS AI Employees/);
+  assert.match(response.body, /Employee name/);
+  assert.match(response.body, /Objective/);
+  assert.match(response.body, /Require approval for high-risk actions/);
+  assert.match(response.body, /Record execution activity for audit/);
+});
