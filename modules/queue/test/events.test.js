@@ -14,7 +14,14 @@ test('queues downstream task from task.completed event', async () => {
   await eventBus.publish({ type: 'task.completed', taskId: 'current-1', processId: 'process-1', nextTaskId: 'next-1', status: 'completed' });
 
   const item = await repository.find('queue', 'next-1');
-  assert.deepEqual(item, { id: 'next-1', processId: 'process-1', status: 'queued', attempts: 0 });
+  assert.deepEqual(item, {
+    id: 'next-1',
+    processId: 'process-1',
+    status: 'queued',
+    attempts: 0,
+    workerId: null,
+    leaseExpiresAt: null
+  });
 });
 
 test('ignores completion events without downstream work', async () => {

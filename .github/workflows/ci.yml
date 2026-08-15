@@ -1,12 +1,9 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - mission-025-production-persistence-foundation
-      - mission-027-distributed-worker-runtime
   pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 jobs:
   repository-check:
