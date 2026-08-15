@@ -1,0 +1,71 @@
+name: BOS Public APK Distribution
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile/android/**'
+      - '.github/workflows/public-apk-pages.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: mobile/android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: gradle --no-daemon assembleDebug
+
+      - name: Prepare public download site
+        working-directory: ${{ github.workspace }}
+        run: |
+          rm -rf public-apk
+          mkdir -p public-apk
+          cp mobile/android/app/build/outputs/apk/debug/app-debug.apk public-apk/bos-beta.apk
+          cat > public-apk/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BOS Android Beta</title></head>
+          <body style="font-family:system-ui,sans-serif;max-width:720px;margin:80px auto;padding:24px">
+          <h1>BOS Android Beta</h1>
+          <p>Business Operating System early-access Android application.</p>
+          <p><a href="./bos-beta.apk" download>Download BOS Android Beta APK</a></p>
+          <p>Free early access for initial customers.</p>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public-apk
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
