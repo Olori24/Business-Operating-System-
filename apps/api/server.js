@@ -7,14 +7,15 @@ const { requestContext, errorPayload } = require('./middleware');
 const port = Number(process.env.PORT || 3000);
 const apiVersion = 'v1';
 const dashboardPath = path.join(__dirname, '..', 'dashboard', 'index.html');
+const workflowBuilderPath = path.join(__dirname, '..', 'dashboard', 'workflows.html');
 
-function dashboardResponse(res) {
+function htmlResponse(res, filePath) {
   try {
-    const html = fs.readFileSync(dashboardPath, 'utf8');
+    const html = fs.readFileSync(filePath, 'utf8');
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     res.end(html);
   } catch {
-    jsonResponse(res, 500, { status: 'error', code: 'DASHBOARD_UNAVAILABLE' });
+    jsonResponse(res, 500, { status: 'error', code: 'PAGE_UNAVAILABLE' });
   }
 }
 
@@ -28,7 +29,12 @@ function requestHandler(req, res) {
   }
 
   if (req.method === 'GET' && (req.url === '/' || req.url === '/dashboard')) {
-    dashboardResponse(res);
+    htmlResponse(res, dashboardPath);
+    return;
+  }
+
+  if (req.method === 'GET' && (req.url === '/workflows' || req.url === '/dashboard/workflows')) {
+    htmlResponse(res, workflowBuilderPath);
     return;
   }
 

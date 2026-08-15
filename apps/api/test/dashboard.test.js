@@ -45,3 +45,15 @@ test('dashboard exposes business workspace onboarding controls', async () => {
   assert.match(response.body, /teamSize/);
   assert.match(response.body, /workspaceForm/);
 });
+
+test('serves workflow builder with core workflow controls', async () => {
+  const response = await request('/workflows');
+  assert.equal(response.statusCode, 200);
+  assert.match(response.contentType, /text\/html/);
+  assert.match(response.body, /BOS Workflow Builder/);
+  assert.match(response.body, /Workflow name/);
+  assert.match(response.body, /Choose a trigger/);
+  assert.match(response.body, /Choose an action/);
+  assert.match(response.body, /Save workflow/);
+  assert.match(response.body, /workflow/);
+});
