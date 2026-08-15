@@ -2,8 +2,40 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index"
+      "source": "/dashboard",
+      "destination": "/api/dashboard"
+    },
+    {
+      "source": "/workflows",
+      "destination": "/api/workflows"
+    },
+    {
+      "source": "/ai-employees",
+      "destination": "/api/ai-employees"
+    },
+    {
+      "source": "/integrations",
+      "destination": "/api/integrations"
+    },
+    {
+      "source": "/execution",
+      "destination": "/api/execution"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/api/analytics"
+    },
+    {
+      "source": "/billing",
+      "destination": "/api/billing"
+    },
+    {
+      "source": "/support",
+      "destination": "/api/support"
+    },
+    {
+      "source": "/launch",
+      "destination": "/api/launch"
     }
   ]
 }
