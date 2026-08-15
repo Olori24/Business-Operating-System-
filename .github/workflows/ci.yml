@@ -1,6 +1,10 @@
 name: CI
 
 on:
+  push:
+    branches:
+      - main
+      - mission-030-observability
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
