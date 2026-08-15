@@ -13,13 +13,13 @@
 
 ## Overview
 
-**Business Operating System (BOS)** is a modular, multi-tenant execution platform designed to coordinate **business workflows, automation, AI employees, integrations, and industry-specific capabilities** from a common operational foundation.
+**Business Operating System (BOS)** is a modular, multi-tenant execution platform designed to coordinate **business workflows, automation, AI employees, integrations, and commercial operations** from a common operational foundation.
 
 BOS is built around a simple idea:
 
-> **Businesses should be able to configure how work gets done once, then let the system reliably execute, recover, observe, and govern that work.**
+> **Businesses should be able to configure how work gets done once, then let the system reliably execute, recover, observe, govern, measure, and scale that work.**
 
-Instead of building a separate automation stack for every company, BOS provides a shared execution layer on which businesses can run their own workflows, teams, agents, integrations, and operational processes.
+Instead of assembling a different automation stack for every company, BOS provides a shared execution layer on which businesses can run workflows, teams, AI employees, integrations, subscriptions, and operational processes.
 
 ---
 
@@ -35,7 +35,8 @@ The long-term vision is a business operating layer where:
 - integrations connect existing business systems;
 - the execution engine handles retries and recovery;
 - observability makes important operations traceable;
-- governance and security keep humans in control of high-risk actions.
+- governance keeps humans in control of high-risk actions;
+- commercial infrastructure makes the platform viable at scale.
 
 BOS is intentionally designed as a **platform**, not a single vertical application.
 
@@ -58,19 +59,21 @@ BOS aims to provide the execution layer underneath those operations:
                                       │
              ┌────────────────────────┼────────────────────────┐
              │                        │                        │
-         Workflows                  AI                        Integrations
-             │                    Employees                      │
+         Workflows                  AI                    Integrations
+             │                    Employees                    │
              └────────────────────────┼────────────────────────┘
                                       │
                               Execution Engine
                                       │
-                    ┌─────────────────┼─────────────────┐
-                    │                 │                 │
-                Persistence        Recovery        Observability
-                    │                 │                 │
-                    └─────────────────┼─────────────────┘
+                 ┌────────────────────┼────────────────────┐
+                 │                    │                    │
+             Persistence          Recovery          Observability
+                 │                    │                    │
+                 └────────────────────┼────────────────────┘
                                       │
-                                   Business
+                              Commercial Layer
+                                      │
+                     Billing • Usage • Entitlements
 ```
 
 ---
@@ -88,36 +91,49 @@ BOS aims to provide the execution layer underneath those operations:
 - Recovery-aware execution
 - Idempotency protection
 
-## Persistence
+## Data & Platform Foundation
 
 - PostgreSQL persistence foundation
-- Tenant-scoped repositories
 - Durable orchestration state
-- Transaction support
-- Persistent execution state
+- Tenant-scoped repositories
+- Transactional persistence boundaries
+- Durable event infrastructure
+- Production API foundations
+- Identity and authorization boundaries
+- Reusable platform packages
 
-## Multi-Tenancy
+## AI Employees
+
+- AI employee runtime
+- Agent identity
+- Tool permissions
+- Agent memory and context
+- Policy and guardrail boundaries
+- Planning, execution, and verification
+- Human approval workflows
+- AI/business automation primitives
+
+## Multi-Tenancy & Security
 
 - Tenant-aware persistence boundaries
-- Organization and team model
-- Role and authorization foundations
+- Organizations and teams
+- Roles and permissions
 - Cross-tenant isolation controls
+- API keys
+- Signed webhook boundaries
+- Auditability and governance
 
-## Operations
+## Commercial Platform
 
-- Structured execution state
-- Operational health/readiness contracts
-- Audit and security gates
-- Production deployment and rollback controls
-- Disaster-recovery requirements
-
-## Platform Extensibility
-
-- Modular business capabilities
-- AI employee / agent integration boundary
+- Customer onboarding
+- Subscription lifecycle
+- Usage metering
+- Plan entitlements
+- Tenant API keys
 - Integration registry
-- Industry-specific modules
-- Reusable platform packages
+- Commercial reporting
+- Commercial audit trails
+- Production launch certification
 
 ---
 
@@ -130,35 +146,39 @@ BOS aims to provide the execution layer underneath those operations:
                                       │
                               Identity & Tenancy
                                       │
-                     ┌────────────────┴────────────────┐
-                     │                                 │
-                 Workflows                         Integrations
-                     │                                 │
-                     └────────────────┬────────────────┘
+                    ┌─────────────────┴─────────────────┐
+                    │                                   │
+                Workflows                          Integrations
+                    │                                   │
+                    └─────────────────┬─────────────────┘
                                       │
-                              Orchestration Layer
+                             Orchestration Layer
                                       │
-                 ┌────────────────────┼────────────────────┐
-                 │                    │                    │
-              Queue               Scheduler           Event Bus
-                 │                    │                    │
-                 └────────────────────┼────────────────────┘
+              ┌───────────────────────┼───────────────────────┐
+              │                       │                       │
+           Queue                  Scheduler               Event Bus
+              │                       │                       │
+              └───────────────────────┼───────────────────────┘
                                       │
                               Worker Runtime
                                       │
-                         ┌────────────┴────────────┐
-                         │                         │
-                    Lease/Heartbeat           Execution
-                         │                         │
-                         └────────────┬────────────┘
+                       ┌──────────────┴──────────────┐
+                       │                             │
+                 Lease/Heartbeat               Execution
+                       │                             │
+                       └──────────────┬──────────────┘
                                       │
-                              Durable State
+                               Durable State
                                       │
                                   PostgreSQL
                                       │
-                         ┌────────────┴────────────┐
-                         │                         │
-                    Recovery                 Idempotency
+                       ┌──────────────┴──────────────┐
+                       │                             │
+                   Recovery                    Idempotency
+                                      │
+                              Commercial Layer
+                                      │
+                   Billing • Usage • Entitlements
 ```
 
 The architecture is modular so core platform infrastructure can evolve independently from business-specific capabilities.
@@ -189,7 +209,7 @@ Execute                       │
  │                            │
  ├── success → complete       │
  │                            │
- ├── transient failure        │
+ ├── transient failure         │
  │       ↓                    │
  │     retry/backoff          │
  │                            │
@@ -206,11 +226,86 @@ BOS also uses idempotency protections to reduce duplicate effects during retries
 
 ---
 
+# Foundation 2.0 — Missions 041–050
+
+The first major foundation phase was focused on making the **next 100 features cheap, safe, testable, maintainable, and scalable**.
+
+### 10/10 missions completed
+
+| Mission | Capability | Status |
+|---|---|---|
+| **041** | Production Data Layer Hardening | ✅ |
+| **042** | Durable Event Infrastructure | ✅ |
+| **043** | Production API Foundation | ✅ |
+| **044** | Identity & Multi-Tenancy | ✅ |
+| **045** | Security / Authorization Foundation | ✅ |
+| **046** | Canonical Workflow Engine | ✅ |
+| **047** | Workflow Versioning & Lifecycle | ✅ |
+| **048** | Scheduler & Advanced Execution | ✅ |
+| **049** | Human Approval & Governance | ✅ |
+| **050** | Integration Platform Foundation | ✅ |
+
+### Phase outcome
+
+BOS gained reusable primitives for data, events, APIs, identity, security, workflows, scheduling, approvals, and integrations so future features do not repeatedly reinvent core infrastructure.
+
+---
+
+# AI + Business Automation — Missions 051–060
+
+The second major phase turned the infrastructure into an **AI-powered execution platform**.
+
+### 10/10 missions completed
+
+| Mission | Capability | Status |
+|---|---|---|
+| **051** | AI Employee Runtime | ✅ |
+| **052** | Agent Identity, Tools & Permissions | ✅ |
+| **053** | Agent Memory & Context | ✅ |
+| **054** | Agent Policy & Guardrails | ✅ |
+| **055** | Planning, Execution & Verification | ✅ |
+| **056** | Business Automation Engine | ✅ |
+| **057** | Triggers, Rules & Conditional Automation | ✅ |
+| **058** | AI + Human Collaboration | ✅ |
+| **059** | Automation Observability & Cost Controls | ✅ |
+| **060** | AI Employee Production Readiness | ✅ |
+
+### Phase outcome
+
+BOS can now model AI employees as governed execution capabilities with explicit identity, tools, permissions, memory, policies, verification, human oversight, and operational controls.
+
+---
+
+# Commercial Platform — Missions 061–070
+
+The third major phase converted the platform foundation into a **commercial SaaS substrate** capable of supporting customer onboarding and controlled business usage.
+
+### 10/10 missions completed
+
+| Mission | Capability | Status |
+|---|---|---|
+| **061** | Production Customer Onboarding | ✅ |
+| **062** | Subscription Lifecycle | ✅ |
+| **063** | Tenant Usage Metering | ✅ |
+| **064** | Plan Entitlements | ✅ |
+| **065** | Tenant API Keys | ✅ |
+| **066** | Signed Webhook Delivery | ✅ |
+| **067** | Integration Registry Hardening | ✅ |
+| **068** | Commercial Reporting & Audit | ✅ |
+| **069** | Commercial Production Readiness | ✅ |
+| **070** | Commercial Launch Certification | ✅ |
+
+### Phase outcome
+
+BOS now has a commercial foundation for onboarding organizations, managing subscriptions, measuring usage, enforcing entitlements, exposing tenant credentials, delivering signed webhooks, managing integrations, and producing commercial/audit records.
+
+---
+
 # Production Readiness
 
-Mission 040 established the repository-level **production-readiness certification framework**.
+Mission 040 established the repository-level **production-readiness certification framework**. Mission 070 extended that discipline into the commercial platform.
 
-The production path includes:
+The completed platform path includes:
 
 - PostgreSQL persistence
 - Durable orchestration state
@@ -220,18 +315,28 @@ The production path includes:
 - Observability foundations
 - Tenant isolation controls
 - Production health/readiness contracts
-- Customer onboarding lifecycle
+- Customer onboarding
 - Organizations and team management
-- Integration registry
-- Billing plan contract
+- AI employee runtime
+- Agent permissions and policies
+- Workflow automation
+- Integration infrastructure
+- Subscription lifecycle
+- Usage metering
+- Plan entitlements
+- Tenant API keys
+- Signed webhooks
+- Commercial reporting and audit
 - Deployment and rollback gates
 - Disaster-recovery requirements
 - Security audit gates
-- Production-readiness certification
+- Commercial launch certification
 
 ### Important deployment boundary
 
-**BOS v1.0 is production-architecture ready and repository-certified, but a live production launch still requires environment-specific controls such as managed infrastructure, secrets, DNS/TLS, external-provider approvals, load testing, penetration testing, backup verification, and a real disaster-recovery exercise.**
+**BOS is repository-certified for its production architecture and commercial foundation, but repository certification is not the same as a live global production deployment.**
+
+A real launch still requires environment-specific controls such as managed infrastructure, secrets, DNS/TLS, external-provider approvals, load testing, penetration testing, backup/restore verification, payment-provider readiness, monitoring, incident response, and a real disaster-recovery exercise.
 
 The project intentionally does not confuse a green CI pipeline with proof that every production environment is operationally ready.
 
@@ -272,41 +377,22 @@ Merge
 
 ---
 
-# Mission Roadmap
-
-## Completed
-
-- Mission 024 — Exactly-Once / Idempotency Contract
-- Mission 025 — PostgreSQL Persistence Foundation
-- Mission 026 — PostgreSQL Orchestration State
-- Mission 027 — Distributed Worker Runtime
-- Mission 028 — Durable Worker Leases
-- Mission 029 — Failure Infrastructure
-- Mission 030 — Observability Foundation
-- Mission 031 — Tenant Isolation
-- Mission 032 — Production Health / Readiness
-- Mission 033 — Customer Onboarding
-- Mission 034 — Organizations / Teams / Roles
-- Mission 035 — Integration Registry
-- Mission 036 — Billing Plan Contract
-- Mission 037 — Production Deployment / Rollback Gate
-- Mission 038 — Disaster Recovery Gate
-- Mission 039 — Security Audit Gate
-- Mission 040 — Production Readiness Certification
-
----
-
-# Repository Structure
+# Current Mission Progress
 
 ```text
-apps/        Deployable product applications and services
-packages/    Reusable platform libraries
-modules/     Business-domain and execution capabilities
-agents/      AI employee and automation capabilities
-docs/        Architecture, engineering, security and operations
+024–040  Core + Production Foundation       ✅ COMPLETE
+041–050  Foundation 2.0                     ✅ 10/10
+051–060  AI + Business Automation           ✅ 10/10
+061–070  Commercial Platform                ✅ 10/10
+
+                         47 missions tracked
+                         ────────────────────
+                         Production foundation
+                         + AI execution
+                         + commercial substrate
 ```
 
-The repository is organized so core platform infrastructure can remain reusable while business-specific capabilities evolve independently.
+The current architecture is designed so future capabilities can be added on top of stable primitives rather than repeatedly rebuilding infrastructure.
 
 ---
 
@@ -314,15 +400,9 @@ The repository is organized so core platform infrastructure can remain reusable 
 
 AI is treated as an **execution capability**, not as an unrestricted authority layer.
 
-AI employees and automation components can operate inside defined business workflows and policies while the platform retains explicit boundaries around authorization, verification, recovery, and high-risk actions.
+AI employees and automation components operate inside defined business workflows and policies while the platform retains explicit boundaries around authorization, verification, recovery, governance, and high-risk actions.
 
-This makes it possible to move from:
-
-```text
-AI generates something
-```
-
-toward:
+The model is:
 
 ```text
 Business goal
@@ -335,10 +415,14 @@ AI employee / automation
      ↓
 Verification
      ↓
+Human approval where required
+     ↓
 Execution
      ↓
 Audit
 ```
+
+This creates a foundation for AI systems that can perform useful business work without turning business-critical actions into uncontrolled black boxes.
 
 ---
 
@@ -378,7 +462,8 @@ The CI pipeline verifies:
 - repository structure;
 - dependency installation;
 - the complete repository test suite;
-- production-readiness modules covered by the test command.
+- production-readiness modules covered by the test command;
+- commercial platform certification gates.
 
 Run the test suite locally:
 
@@ -421,23 +506,29 @@ Security is a first-class architectural concern.
 
 The repository includes security and tenant-isolation controls, while production deployment additionally requires environment-specific secret management, infrastructure hardening, penetration testing, backup validation, and operational monitoring.
 
-For security issues, please follow the repository's security reporting guidance rather than publicly disclosing vulnerabilities.
+For security issues, follow the repository's security reporting guidance rather than publicly disclosing vulnerabilities.
 
 ---
 
-# Roadmap Beyond v1.0
+# Roadmap Beyond Mission 070
 
-The next evolution of BOS is expected to focus on the commercial and operational layer:
+The next evolution of BOS should focus on turning the certified platform into a **live, globally deployable business operating service**.
 
+Potential priorities include:
+
+- production cloud infrastructure;
 - deeper business vertical templates;
 - richer AI employee capabilities;
 - additional integrations;
-- production cloud infrastructure;
+- customer-facing web applications;
 - advanced analytics;
 - workflow marketplace capabilities;
 - enterprise policy controls;
-- larger-scale distributed execution;
-- global multi-region operations.
+- large-scale distributed execution;
+- performance and load engineering;
+- multi-region operations;
+- compliance automation;
+- global commercial deployment.
 
 The platform is designed to grow without forcing every business into the same workflow model.
 
@@ -445,11 +536,16 @@ The platform is designed to grow without forcing every business into the same wo
 
 # Project Status
 
-**BOS v1.0.0 — Production-readiness milestone achieved.**
+**BOS v1.0.0 — Core, AI, automation, and commercial platform milestones completed.**
 
-The project is under active development toward live commercial deployment.
+Current completed milestones:
 
-The immediate focus is converting the certified production architecture into a fully operated cloud service capable of onboarding and serving businesses at scale.
+- **Core / Production Foundation:** Missions 024–040 ✅
+- **Foundation 2.0:** Missions 041–050 — **10/10** ✅
+- **AI + Business Automation:** Missions 051–060 — **10/10** ✅
+- **Commercial Platform:** Missions 061–070 — **10/10** ✅
+
+The project is now moving from **platform construction toward live commercial deployment and scale validation**.
 
 ---
 
