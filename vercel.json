@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/start", "destination": "/apps/dashboard/start.html" },
+    { "source": "/start", "destination": "/apps/dashboard/onboarding.html" },
+    { "source": "/onboarding", "destination": "/apps/dashboard/onboarding.html" },
     { "source": "/dashboard", "destination": "/apps/dashboard/index.html" },
     { "source": "/workflows", "destination": "/apps/dashboard/workflows.html" },
     { "source": "/ai-employees", "destination": "/apps/dashboard/ai-employees.html" },
