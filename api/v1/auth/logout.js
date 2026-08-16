@@ -1,0 +1,2 @@
+const { revokeSession, parseCookies, clearSessionCookie } = require('../../../packages/auth/email_auth');
+module.exports=async function(req,res){if(req.method!=='POST')return res.status(405).json({error:{code:'METHOD_NOT_ALLOWED'}});try{await revokeSession(parseCookies(req).bos_session);clearSessionCookie(res);return res.status(200).json({status:'signed_out'})}catch(e){return res.status(500).json({error:{code:'LOGOUT_FAILED',message:e.message}})}};
