@@ -1,68 +1,7 @@
 const crypto = require('node:crypto');
 const { AutomationEngine } = require('../../../modules/automation/engine');
 const { getProductionStore } = require('../../../packages/persistence/production_store');
-
-function buildEngine(store) {
-  const saveAction = async ({ tenantId, input, action, status = 'pending' }) => {
-    const id = crypto.randomUUID();
-    const record = { id, tenantId, action, status, input, createdAt: new Date().toISOString() };
-    await store.repository.save(tenantId, action, id, record);
-    return { action, id, status, persisted: true, input };
-  };
-  return new AutomationEngine({
-    actions: {
-      create_task: ({ tenantId, input }) => saveAction({ tenantId, input, action: 'task', status: 'open' }),
-      notify_sales: ({ tenantId, input }) => saveAction({ tenantId, input, action: 'sales_notification', status: 'queued' }),
-      ai_followup: ({ tenantId, input }) => saveAction({ tenantId, input, action: 'ai_followup', status: 'queued' }),
-    },
-  });
-}
-
-function send(res, status, body) {
-  res.statusCode = status;
-  res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.setHeader('cache-control', 'no-store');
-  res.end(JSON.stringify(body));
-}
-
-module.exports = async (req, res) => {
-  const requestId = req.headers['x-request-id'] || crypto.randomUUID();
-  res.setHeader('x-request-id', requestId);
-  if (req.method !== 'POST') return send(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Use POST for automation execution', requestId } });
-
-  const tenantId = req.headers['x-tenant-id'];
-  if (!tenantId || typeof tenantId !== 'string' || tenantId.length > 128) {
-    return send(res, 401, { error: { code: 'TENANT_REQUIRED', message: 'x-tenant-id is required', requestId } });
-  }
-
-  try {
-    const payload = typeof req.body === 'object' && req.body !== null ? req.body : {};
-    const store = await getProductionStore();
-    if (!store) return send(res, 503, { error: { code: 'DATABASE_NOT_READY', message: 'Production database is required for automation execution', requestId } });
-
-    let workflow = null;
-    let steps = Array.isArray(payload.steps) ? payload.steps : [];
-    if (payload.workflowId) {
-      workflow = await store.repository.find(tenantId, 'workflow', String(payload.workflowId));
-      if (!workflow) return send(res, 404, { error: { code: 'WORKFLOW_NOT_FOUND', message: 'Workflow not found', requestId } });
-      if (workflow.enabled === false) return send(res, 409, { error: { code: 'WORKFLOW_DISABLED', message: 'Workflow is disabled', requestId } });
-      steps = Array.isArray(workflow.steps) ? workflow.steps : [];
-    }
-    if (!steps.length) return send(res, 400, { error: { code: 'INVALID_REQUEST', message: 'steps or workflowId must resolve to at least one action', requestId } });
-
-    const idempotencyKey = req.headers['idempotency-key'] || crypto.randomUUID();
-    const executionId = crypto.createHash('sha256').update(`${tenantId}:${idempotencyKey}`).digest('hex').slice(0, 40);
-    const existing = await store.repository.find(tenantId, 'execution', executionId);
-    if (existing) return send(res, 200, { status: 'completed', replayed: true, persisted: true, execution: existing, requestId });
-
-    const startedAt = new Date().toISOString();
-    const engine = buildEngine(store);
-    const context = { ...(payload.context || {}), executionId, workflowId: workflow?.id || null, workflowVersion: workflow?.version || null };
-    const result = await engine.run({ tenantId, steps, context });
-    const execution = { id: executionId, tenantId, status: 'completed', idempotencyKey, workflowId: workflow?.id || null, workflowVersion: workflow?.version || null, steps, context, result, startedAt, completedAt: new Date().toISOString() };
-    await store.repository.save(tenantId, 'execution', executionId, execution);
-    return send(res, 200, { status: 'completed', persisted: true, execution, requestId });
-  } catch (error) {
-    return send(res, 422, { error: { code: 'AUTOMATION_FAILED', message: error.message || 'Automation failed', requestId } });
-  }
-};
+const { resolveTenantId } = require('../../../modules/auth/session');
+function buildEngine(store){const saveAction=async({tenantId,input,action,status='pending'})=>{const id=crypto.randomUUID();const record={id,tenantId,action,status,input,createdAt:new Date().toISOString()};await store.repository.save(tenantId,action,id,record);return{action,id,status,persisted:true,input}};return new AutomationEngine({actions:{create_task:({tenantId,input})=>saveAction({tenantId,input,action:'task',status:'open'}),notify_sales:({tenantId,input})=>saveAction({tenantId,input,action:'sales_notification',status:'queued'}),ai_followup:({tenantId,input})=>saveAction({tenantId,input,action:'ai_followup',status:'queued'})}})}
+function send(res,status,body){res.statusCode=status;res.setHeader('content-type','application/json; charset=utf-8');res.setHeader('cache-control','no-store');res.end(JSON.stringify(body))}
+module.exports=async(req,res)=>{const requestId=req.headers['x-request-id']||crypto.randomUUID();res.setHeader('x-request-id',requestId);if(req.method!=='POST')return send(res,405,{error:{code:'METHOD_NOT_ALLOWED',message:'Use POST for automation execution',requestId}});try{const tenantId=await resolveTenantId(req);if(!tenantId)return send(res,401,{error:{code:'AUTH_REQUIRED',message:'Sign in is required',requestId}});const payload=typeof req.body==='object'&&req.body!==null?req.body:{};const store=await getProductionStore();if(!store)return send(res,503,{error:{code:'DATABASE_NOT_READY',message:'Production database is required for automation execution',requestId}});let workflow=null;let steps=Array.isArray(payload.steps)?payload.steps:[];if(payload.workflowId){workflow=await store.repository.find(tenantId,'workflow',String(payload.workflowId));if(!workflow)return send(res,404,{error:{code:'WORKFLOW_NOT_FOUND',message:'Workflow not found',requestId}});if(workflow.enabled===false)return send(res,409,{error:{code:'WORKFLOW_DISABLED',message:'Workflow is disabled',requestId}});steps=Array.isArray(workflow.steps)?workflow.steps:[]}if(!steps.length)return send(res,400,{error:{code:'INVALID_REQUEST',message:'steps or workflowId must resolve to at least one action',requestId}});const idempotencyKey=req.headers['idempotency-key']||crypto.randomUUID();const executionId=crypto.createHash('sha256').update(`${tenantId}:${idempotencyKey}`).digest('hex').slice(0,40);const existing=await store.repository.find(tenantId,'execution',executionId);if(existing)return send(res,200,{status:'completed',replayed:true,persisted:true,execution:existing,requestId});const startedAt=new Date().toISOString();const result=await buildEngine(store).run({tenantId,steps,context:{...(payload.context||{}),executionId,workflowId:workflow?.id||null,workflowVersion:workflow?.version||null}});const execution={id:executionId,tenantId,status:'completed',idempotencyKey,workflowId:workflow?.id||null,workflowVersion:workflow?.version||null,steps,context:payload.context||{},result,startedAt,completedAt:new Date().toISOString()};await store.repository.save(tenantId,'execution',executionId,execution);return send(res,200,{status:'completed',persisted:true,execution,requestId})}catch(error){return send(res,422,{error:{code:'AUTOMATION_FAILED',message:error.message||'Automation failed',requestId}})}};
