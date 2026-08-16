@@ -1,0 +1,2 @@
+const { getSession, parseCookies } = require('../../../packages/auth/email_auth');
+module.exports=async function(req,res){if(req.method!=='GET')return res.status(405).json({error:{code:'METHOD_NOT_ALLOWED'}});try{const session=await getSession(parseCookies(req).bos_session);if(!session)return res.status(401).json({authenticated:false});return res.status(200).json({authenticated:true,user:{id:session.user_id,email:session.email,name:session.name}})}catch(e){return res.status(500).json({error:{code:'SESSION_FAILED',message:e.message}})}};
