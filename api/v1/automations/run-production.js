@@ -9,7 +9,6 @@ function buildEngine(store) {
     await store.repository.save(tenantId, action, id, record);
     return { action, id, status, persisted: true, input };
   };
-
   return new AutomationEngine({
     actions: {
       create_task: ({ tenantId, input }) => saveAction({ tenantId, input, action: 'task', status: 'open' }),
@@ -38,11 +37,18 @@ module.exports = async (req, res) => {
 
   try {
     const payload = typeof req.body === 'object' && req.body !== null ? req.body : {};
-    const steps = Array.isArray(payload.steps) ? payload.steps : [];
-    if (!steps.length) return send(res, 400, { error: { code: 'INVALID_REQUEST', message: 'steps must contain at least one action', requestId } });
-
     const store = await getProductionStore();
     if (!store) return send(res, 503, { error: { code: 'DATABASE_NOT_READY', message: 'Production database is required for automation execution', requestId } });
+
+    let workflow = null;
+    let steps = Array.isArray(payload.steps) ? payload.steps : [];
+    if (payload.workflowId) {
+      workflow = await store.repository.find(tenantId, 'workflow', String(payload.workflowId));
+      if (!workflow) return send(res, 404, { error: { code: 'WORKFLOW_NOT_FOUND', message: 'Workflow not found', requestId } });
+      if (workflow.enabled === false) return send(res, 409, { error: { code: 'WORKFLOW_DISABLED', message: 'Workflow is disabled', requestId } });
+      steps = Array.isArray(workflow.steps) ? workflow.steps : [];
+    }
+    if (!steps.length) return send(res, 400, { error: { code: 'INVALID_REQUEST', message: 'steps or workflowId must resolve to at least one action', requestId } });
 
     const idempotencyKey = req.headers['idempotency-key'] || crypto.randomUUID();
     const executionId = crypto.createHash('sha256').update(`${tenantId}:${idempotencyKey}`).digest('hex').slice(0, 40);
@@ -51,10 +57,10 @@ module.exports = async (req, res) => {
 
     const startedAt = new Date().toISOString();
     const engine = buildEngine(store);
-    const result = await engine.run({ tenantId, steps, context: { ...(payload.context || {}), executionId } });
-    const execution = { id: executionId, tenantId, status: 'completed', idempotencyKey, steps, context: payload.context || {}, result, startedAt, completedAt: new Date().toISOString() };
+    const context = { ...(payload.context || {}), executionId, workflowId: workflow?.id || null, workflowVersion: workflow?.version || null };
+    const result = await engine.run({ tenantId, steps, context });
+    const execution = { id: executionId, tenantId, status: 'completed', idempotencyKey, workflowId: workflow?.id || null, workflowVersion: workflow?.version || null, steps, context, result, startedAt, completedAt: new Date().toISOString() };
     await store.repository.save(tenantId, 'execution', executionId, execution);
-
     return send(res, 200, { status: 'completed', persisted: true, execution, requestId });
   } catch (error) {
     return send(res, 422, { error: { code: 'AUTOMATION_FAILED', message: error.message || 'Automation failed', requestId } });
