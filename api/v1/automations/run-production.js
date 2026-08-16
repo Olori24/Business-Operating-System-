@@ -1,18 +1,11 @@
 const crypto = require('node:crypto');
-const { AutomationEngine } = require('../../../../modules/automation/engine');
-const { getProductionStore } = require('../../../../packages/persistence/production_store');
+const { AutomationEngine } = require('../../../modules/automation/engine');
+const { getProductionStore } = require('../../../packages/persistence/production_store');
 
 function buildEngine(store) {
   const saveAction = async ({ tenantId, input, action, status = 'pending' }) => {
     const id = crypto.randomUUID();
-    const record = {
-      id,
-      tenantId,
-      action,
-      status,
-      input,
-      createdAt: new Date().toISOString(),
-    };
+    const record = { id, tenantId, action, status, input, createdAt: new Date().toISOString() };
     await store.repository.save(tenantId, action, id, record);
     return { action, id, status, persisted: true, input };
   };
