@@ -5,9 +5,10 @@ function cookieValue(req,name){const raw=String(req.headers.cookie||'');const it
 async function authenticatedTenantId(req){const token=cookieValue(req,'bos_session');if(!token)return null;const store=await getProductionStore();if(!store)return null;
   const emailSession=await getSession(token).catch(()=>null);
   if(emailSession){const result=await store.pool.query("SELECT value FROM bos_records WHERE record_type='workspace' AND value->>'userId'=$1 LIMIT 1",[emailSession.user_id]).catch(()=>({rowCount:0,rows:[]}));if(result.rowCount)return result.rows[0].value.tenantId}
-  const hash=crypto.createHash('sha256').update(token).digest('hex');const users=await store.repository.all('global','user').catch(()=>[]);
-  for(const user of users){if(!user?.tenantId)continue;const record=await store.repository.find(user.tenantId,'auth_session',hash).catch(()=>null);if(record?.expiresAt&&new Date(record.expiresAt).getTime()>Date.now())return user.tenantId}
+  const hash=crypto.createHash('sha256').update(token).digest('hex');
+  const googleSession=await store.pool.query("SELECT tenant_id,value FROM bos_records WHERE record_type='auth_session' AND record_id=$1 LIMIT 1",[hash]).catch(()=>({rowCount:0,rows:[]}));
+  if(googleSession.rowCount){const session=googleSession.rows[0].value;if(session?.expiresAt&&new Date(session.expiresAt).getTime()>Date.now())return googleSession.rows[0].tenant_id}
   return null;
 }
-async function resolveTenantId(req){const authenticated=await authenticatedTenantId(req);if(authenticated)return authenticated;const header=req.headers['x-tenant-id'];return typeof header==='string'&&header.length<=128?header:null}
+async function resolveTenantId(req){return authenticatedTenantId(req)}
 module.exports={authenticatedTenantId,resolveTenantId};
