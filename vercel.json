@@ -1,6 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
+    { "source": "/api/health", "destination": "/api/[...path].js" },
+    { "source": "/api/v1/auth/google-config", "destination": "/api/[...path].js" },
+    { "source": "/api/v1/auth/google", "destination": "/api/[...path].js" },
     { "source": "/start", "destination": "/apps/dashboard/onboarding.html" },
     { "source": "/onboarding", "destination": "/apps/dashboard/onboarding.html" },
     { "source": "/dashboard", "destination": "/apps/dashboard/index.html" },
