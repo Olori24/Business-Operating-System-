@@ -34,4 +34,13 @@ jobs:
           test -f SECURITY.md
           test -f CONTRIBUTING.md
       - name: Run repository test suite
-        run: npm test
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.log
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bos-test-output
+          path: test-output.log
+          if-no-files-found: error
