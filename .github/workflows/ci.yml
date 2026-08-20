@@ -71,6 +71,19 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Start PostgreSQL
         run: docker compose up -d postgres
+      - name: Wait for PostgreSQL readiness
+        run: |
+          for attempt in {1..30}; do
+            if docker compose exec -T postgres pg_isready -U bos -d bos; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL (attempt ${attempt}/30)..."
+            sleep 2
+          done
+          echo "PostgreSQL did not become ready"
+          docker compose logs postgres
+          exit 1
       - name: Run PostgreSQL integration tests
         env:
           DATABASE_URL: postgres://bos:bos@localhost:5432/bos
