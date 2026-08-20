@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const { requestHandler } = require('../apps/api/server');
 const { getProductionStore } = require('../packages/persistence/production_store');
 const { register: validateRegister, login: validateLogin } = require('../packages/validation/schemas');
+const { captureException } = require('../packages/observability/logger');
 const {
   register,
   login,
@@ -102,11 +103,11 @@ module.exports = async function catchAll(req, res) {
     if (req.method === 'POST' && url === '/api/v1/auth/google') return googleAuth(req, res);
     if (req.method === 'POST' && url === '/api/v1/auth/register') {
       try { return await emailRegister(req, res); }
-      catch (error) { if (error.code === 'VALIDATION_FAILED') return validationError(res, error); return json(res, 400, { error: { code: error.message, message: error.message } }); }
+      catch (error) { if (error.code === 'VALIDATION_FAILED') return validationError(res, error); captureException(error, { path: url, method: req.method, statusCode: 400 }); return json(res, 400, { error: { code: error.message, message: error.message } }); }
     }
     if (req.method === 'POST' && url === '/api/v1/auth/login') {
       try { return await emailLogin(req, res); }
-      catch (error) { if (error.code === 'VALIDATION_FAILED') return validationError(res, error); return json(res, 401, { error: { code: error.message, message: 'Invalid email or password' } }); }
+      catch (error) { if (error.code === 'VALIDATION_FAILED') return validationError(res, error); captureException(error, { path: url, method: req.method, statusCode: 401 }); return json(res, 401, { error: { code: error.message, message: 'Invalid email or password' } }); }
     }
     if (req.method === 'POST' && url === '/api/v1/auth/logout') {
       await revokeSession(parseCookies(req).bos_session);
@@ -116,6 +117,7 @@ module.exports = async function catchAll(req, res) {
     if (req.method === 'GET' && url === '/api/v1/auth/me') return currentUser(req, res);
     return requestHandler(req, res);
   } catch (error) {
+    captureException(error, { path: url, method: req.method, statusCode: 500 });
     return json(res, 500, { error: { code: 'API_FAILED', message: 'Request could not be completed' } });
   }
 };
