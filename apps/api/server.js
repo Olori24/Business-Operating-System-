@@ -16,6 +16,7 @@ const {
 const { sendOutboundWebhook } = require('../../modules/integrations/outbound_webhook');
 const { encryptSecret } = require('../../modules/integrations/secret_store');
 const { sendWhatsAppMessage } = require('../../modules/integrations/whatsapp_cloud');
+const { logger } = require('../../packages/observability/logger');
 
 const port = Number(process.env.PORT || 3000);
 const apiVersion = 'v1';
@@ -138,9 +139,22 @@ const automationEngine = new AutomationEngine({
 });
 
 async function requestHandler(req, res) {
-  const { requestId } = requestContext(req);
-  res.setHeader('x-request-id', requestId);
+  const context = requestContext(req);
+  const { requestId } = context;
+  const startedAt = context.startedAt || Date.now();
   const url = String(req.url || '').split('?')[0];
+  res.setHeader('x-request-id', requestId);
+  if (typeof res.once === 'function') {
+    res.once('finish', () => {
+      logger.info({
+        requestId,
+        method: req.method,
+        path: url,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startedAt,
+      }, 'request completed');
+    });
+  }
 
   try {
     if (req.method === 'GET' && (url === '/health' || url === '/api/health')) {
@@ -280,13 +294,14 @@ async function requestHandler(req, res) {
   } catch (error) {
     const status = error.statusCode || (error instanceof TypeError || error.message === 'INVALID_JSON' ? 400 : error.message === 'UNAUTHENTICATED' ? 401 : 422);
     const code = status === 401 ? 'UNAUTHENTICATED' : status === 400 ? 'INVALID_REQUEST' : 'API_FAILED';
+    logger.error({ err: error, requestId, method: req.method, path: url, statusCode: status }, 'request failed');
     jsonResponse(res, status, errorPayload(code, error.message, requestId));
   }
 }
 
 function startServer() {
   const server = http.createServer(requestHandler);
-  server.listen(port, () => console.log(`BOS API listening on port ${port}`));
+  server.listen(port, () => logger.info({ port }, 'BOS API listening'));
   return server;
 }
 

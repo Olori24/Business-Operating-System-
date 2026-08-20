@@ -1,0 +1,28 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "globals": {
+    "fetch": "readonly",
+    "AbortController": "readonly",
+    "FormData": "readonly",
+    "Headers": "readonly",
+    "Request": "readonly",
+    "Response": "readonly",
+    "describe": "readonly",
+    "test": "readonly",
+    "expect": "readonly"
+  },
+  "rules": {
+    "max-lines": ["error", { "max": 500, "skipBlankLines": true, "skipComments": true }],
+    "no-console": "off",
+    "no-unused-vars": ["warn", { "args": "none", "caughtErrors": "none" }]
+  }
+}
