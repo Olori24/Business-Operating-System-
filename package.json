@@ -7,7 +7,9 @@
     "dev": "node apps/api/server.js",
     "start": "node apps/api/server.js",
     "test": "c8 --check-coverage --lines 60 --branches 50 node --test apps/api/test/*.test.js modules/identity/test/*.test.js modules/business/test/*.test.js modules/workflow/test/*.test.js modules/queue/test/*.test.js modules/scheduler/test/*.test.js modules/orchestration/test/*.test.js modules/observability/test/*.test.js modules/onboarding/test/*.test.js modules/integrations/test/*.test.js modules/billing/test/*.test.js modules/security/test/*.test.js modules/release/test/*.test.js modules/ai/test/*.test.js modules/automation/test/*.test.js packages/persistence/test/*.test.js packages/auth/test/*.test.js packages/authz/test/*.test.js packages/ai/test/*.test.js ops/ai/test/*.test.js ops/production/test/*.test.js ops/recovery/test/*.test.js ops/security/test/*.test.js",
-    "lint": "eslint apps api modules packages ops"
+    "lint": "eslint apps api modules packages ops",
+    "typecheck": "node scripts/typecheck.js",
+    "test:integration": "docker compose up -d postgres && trap 'docker compose down -v' EXIT; DATABASE_URL=postgres://bos:bos@localhost:5432/bos node --test packages/persistence/test/postgres.integration.test.js"
   },
   "dependencies": {
     "pg": "^8.16.3",
