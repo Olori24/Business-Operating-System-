@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const { requestHandler } = require('../apps/api/server');
 const { getProductionStore } = require('../packages/persistence/production_store');
+const { register: validateRegister, login: validateLogin } = require('../packages/validation/schemas');
 const {
   register,
   login,
@@ -27,16 +28,20 @@ function json(res, status, value) {
   res.end(JSON.stringify(value));
 }
 
+function validationError(res, error) {
+  return json(res, 400, { error: { code: 'VALIDATION_FAILED', message: error.message, field: error.field || null } });
+}
+
 async function emailRegister(req, res) {
-  const data = await body(req);
-  const user = await register({ name: data.name, email: data.email, password: data.password });
+  const data = validateRegister(await body(req));
+  const user = await register(data);
   setSessionCookie(res, await createSession(user.id));
   return json(res, 201, { status: 'authenticated', user });
 }
 
 async function emailLogin(req, res) {
-  const data = await body(req);
-  const user = await login({ email: data.email, password: data.password });
+  const data = validateLogin(await body(req));
+  const user = await login(data);
   setSessionCookie(res, await createSession(user.id));
   return json(res, 200, { status: 'authenticated', user, workspace: await getWorkspaceForUser(user.id) });
 }
@@ -74,9 +79,7 @@ async function googleAuth(req, res) {
   if (!store) return json(res, 503, { error: { code: 'DATABASE_NOT_CONFIGURED', message: 'Production database is not configured' } });
   const existing = await store.pool.query('SELECT id,email,name,status FROM bos_users WHERE email=$1', [email]);
   let user = existing.rows[0];
-  if (!user) {
-    user = await register({ email, password: crypto.randomBytes(32).toString('hex'), name });
-  }
+  if (!user) user = await register({ email, password: crypto.randomBytes(32).toString('hex'), name });
 
   const workspace = await getWorkspaceForUser(user.id);
   const finalWorkspace = workspace || (businessName
@@ -84,12 +87,7 @@ async function googleAuth(req, res) {
     : null);
 
   setSessionCookie(res, await createSession(user.id));
-  return json(res, 200, {
-    status: 'authenticated',
-    needsWorkspace: !finalWorkspace,
-    workspace: finalWorkspace,
-    user: { id: user.id, email: user.email, name: user.name },
-  });
+  return json(res, 200, { status: 'authenticated', needsWorkspace: !finalWorkspace, workspace: finalWorkspace, user: { id: user.id, email: user.email, name: user.name } });
 }
 
 module.exports = async function catchAll(req, res) {
@@ -104,11 +102,11 @@ module.exports = async function catchAll(req, res) {
     if (req.method === 'POST' && url === '/api/v1/auth/google') return googleAuth(req, res);
     if (req.method === 'POST' && url === '/api/v1/auth/register') {
       try { return await emailRegister(req, res); }
-      catch (error) { return json(res, 400, { error: { code: error.message, message: error.message } }); }
+      catch (error) { if (error.code === 'VALIDATION_FAILED') return validationError(res, error); return json(res, 400, { error: { code: error.message, message: error.message } }); }
     }
     if (req.method === 'POST' && url === '/api/v1/auth/login') {
       try { return await emailLogin(req, res); }
-      catch (error) { return json(res, 401, { error: { code: error.message, message: 'Invalid email or password' } }); }
+      catch (error) { if (error.code === 'VALIDATION_FAILED') return validationError(res, error); return json(res, 401, { error: { code: error.message, message: 'Invalid email or password' } }); }
     }
     if (req.method === 'POST' && url === '/api/v1/auth/logout') {
       await revokeSession(parseCookies(req).bos_session);
