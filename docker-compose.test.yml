@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bos
+      POSTGRES_PASSWORD: bos
+      POSTGRES_DB: bos
+    ports:
+      - "54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bos -d bos"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
