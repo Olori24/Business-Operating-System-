@@ -72,15 +72,6 @@ function readJson(req) {
   });
 }
 
-function workflowSteps(payload) {
-  if (!Array.isArray(payload.steps) || payload.steps.length < 1 || payload.steps.length > 20) throw new TypeError('steps must contain 1 to 20 actions');
-  return payload.steps.map(step => {
-    if (!step || typeof step.action !== 'string' || !step.action.trim()) throw new TypeError('Each workflow step requires an action');
-    if (step.input !== undefined && (step.input === null || typeof step.input !== 'object' || Array.isArray(step.input))) throw new TypeError('Step input must be an object');
-    return { action: step.action.trim(), input: step.input || {} };
-  });
-}
-
 function executionStatus(results) {
   if (!results.length) return 'skipped';
   if (results.some(result => result?.status === 'failed')) return 'failed';
@@ -167,9 +158,8 @@ async function requestHandler(req, res) {
         const storedWorkflow = await integration(auth.tenantId, 'workflow', workflowId);
         if (!storedWorkflow) throw new Error('WORKFLOW_NOT_FOUND');
         if (storedWorkflow.enabled === false) throw new Error('WORKFLOW_DISABLED');
-        steps = storedWorkflow.steps;
+        steps = workflow({ name: storedWorkflow.name || 'stored', trigger: storedWorkflow.trigger || { type: 'manual' }, steps: storedWorkflow.steps }).steps;
       }
-      steps = workflowSteps({ steps });
       const executionId = `execution_${crypto.randomUUID()}`;
       let execution;
       try {
@@ -190,7 +180,7 @@ async function requestHandler(req, res) {
     jsonResponse(res, 404, errorPayload('NOT_FOUND', 'Route not found', requestId));
   } catch (error) {
     recordError();
-    captureException(error, { requestId, method: req.method, path: url, statusCode: error.statusCode || 500 });
+    captureException(error, { requestId, method: req.method, path: url, tenantId: context.tenantId || null, statusCode: error.statusCode || 500 });
     const status = error.statusCode || (error instanceof TypeError || error.message === 'INVALID_JSON' ? 400 : error.message === 'UNAUTHENTICATED' ? 401 : 422);
     const code = error.code === 'VALIDATION_FAILED' ? 'VALIDATION_FAILED' : status === 401 ? 'UNAUTHENTICATED' : status === 400 ? 'INVALID_REQUEST' : 'API_FAILED';
     logger.error({ err: error, requestId, method: req.method, path: url, statusCode: status }, 'request failed');
