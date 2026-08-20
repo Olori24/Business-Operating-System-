@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "allowJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "include": ["apps/**/*.js", "api/**/*.js", "modules/**/*.js", "packages/**/*.js", "ops/**/*.js", "scripts/**/*.js"]
+}
