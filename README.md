@@ -457,19 +457,18 @@ Keeping the systems separate preserves a clean boundary between **engineering in
 
 BOS uses automated repository verification through GitHub Actions.
 
-The CI pipeline verifies:
+The CI pipeline verifies repository structure, deterministic dependency installation, high-severity dependency vulnerabilities, lint rules, the complete repository test suite, coverage thresholds, production-readiness modules, and commercial platform certification gates.
 
-- repository structure;
-- dependency installation;
-- the complete repository test suite;
-- production-readiness modules covered by the test command;
-- commercial platform certification gates.
-
-Run the test suite locally:
+Run the same quality gates locally:
 
 ```bash
-npm test
+npm ci
+npm run lint
+npm run test
+npm audit --audit-level=high
 ```
+
+The test command enforces a minimum of **60% line coverage** and **50% branch coverage** through c8. Test output is written to the terminal and is captured by CI as `test-output.log` when a run fails.
 
 The project follows a strict rule:
 
@@ -486,17 +485,32 @@ git clone https://github.com/Olori24/Business-Operating-System-.git
 cd Business-Operating-System-
 ```
 
-Install dependencies:
+Install the exact dependency graph recorded in the lockfile:
 
 ```bash
-npm install
+npm ci
 ```
 
-Run tests:
+Run linting and tests:
 
 ```bash
-npm test
+npm run lint
+npm run test
 ```
+
+Start the API locally:
+
+```bash
+npm start
+```
+
+For a self-contained API and PostgreSQL environment, use Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The API health contract is available at [http://localhost:3000/health](http://localhost:3000/health) and [http://localhost:3000/api/health](http://localhost:3000/api/health). The committed `.env.example` documents all runtime variables, including `PORT`, `LOG_LEVEL`, and `WHATSAPP_GRAPH_VERSION`.
 
 ---
 

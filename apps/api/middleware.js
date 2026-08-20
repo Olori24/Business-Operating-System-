@@ -3,7 +3,13 @@ const { randomUUID } = require('node:crypto');
 function requestContext(req = {}) {
   const headers = req.headers || {};
   const requestId = headers['x-request-id'] || randomUUID();
-  return { requestId };
+  const context = { requestId };
+  Object.defineProperty(context, 'startedAt', {
+    value: Date.now(),
+    enumerable: false,
+    writable: false,
+  });
+  return context;
 }
 
 function errorPayload(code, message, requestId) {

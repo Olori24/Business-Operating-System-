@@ -14,7 +14,7 @@ function setup() {
 }
 
 test('creates schedules from schedule request events', async () => {
-  const { repository, eventBus, scheduler } = setup();
+  const { repository, eventBus } = setup();
   await repository.save('task', task.id, task);
   await eventBus.publish({ type: 'task.schedule_requested', scheduleId: 'schedule-1', taskId: task.id, processId: task.processId, runAt: '2030-01-01T10:00:00.000Z' });
   const saved = await repository.find('schedule', 'schedule-1');

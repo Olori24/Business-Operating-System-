@@ -16,13 +16,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        # Commercial phase verification trigger
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm ci --ignore-scripts
+
       - name: Verify repository structure
         run: |
           test -d apps
@@ -33,10 +36,19 @@ jobs:
           test -f README.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
+          test -f package-lock.json
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Run lint checks
+        run: npm run lint
+
       - name: Run repository test suite
         run: |
           set -o pipefail
-          npm test 2>&1 | tee test-output.log
+          npm run test 2>&1 | tee test-output.log
+
       - name: Upload test output on failure
         if: failure()
         uses: actions/upload-artifact@v4
