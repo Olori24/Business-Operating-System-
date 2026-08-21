@@ -65,22 +65,24 @@ jobs:
         with:
           node-version: 22
 
-      - name: Run Lighthouse
+      - name: Run Lighthouse samples
         run: |
           mkdir -p monitor-results
-          npx --yes lighthouse@12.8.2 "$PRODUCTION_URL/start" \
-            --output=json \
-            --output-path=monitor-results/lighthouse.json \
-            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
-            --form-factor=mobile \
-            --screen-emulation.mobile=true \
-            --throttling-method=simulate \
-            --max-wait-for-load=30000 \
-            --no-enable-error-reporting \
-            --quiet
+          for sample in 1 2 3; do
+            npx --yes lighthouse@12.8.2 "$PRODUCTION_URL/start" \
+              --output=json \
+              --output-path="monitor-results/lighthouse-${sample}.json" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --form-factor=mobile \
+              --screen-emulation.mobile=true \
+              --throttling-method=simulate \
+              --max-wait-for-load=30000 \
+              --no-enable-error-reporting \
+              --quiet
+          done
 
-      - name: Enforce performance thresholds
-        run: node scripts/check-lighthouse.mjs monitor-results/lighthouse.json
+      - name: Enforce median performance thresholds
+        run: node scripts/check-lighthouse.mjs monitor-results/lighthouse-1.json monitor-results/lighthouse-2.json monitor-results/lighthouse-3.json
 
       - name: Upload Lighthouse results
         if: always()
@@ -88,7 +90,7 @@ jobs:
         with:
           name: lighthouse-${{ github.run_id }}
           path: |
-            monitor-results/lighthouse.json
+            monitor-results/lighthouse-*.json
             monitor-results/lighthouse-summary.json
           if-no-files-found: error
           retention-days: 14

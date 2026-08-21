@@ -6,7 +6,7 @@ The `Production monitoring` workflow runs automatically at **17 minutes past eve
 
 The smoke job requests the landing page, onboarding page, dashboard page, health endpoint, metadata endpoint, Google authentication configuration endpoint, and the expected unauthenticated authentication guards. It validates HTTP status codes, page titles, JSON contracts, request IDs, and the absence of an eager Google Identity Services script. Its error rate is the number of failed checks divided by the total number of checks; any failed check fails the job.
 
-The browser-performance job runs Lighthouse against `/start` in a simulated mobile Chromium profile. The job fails when any of these thresholds are exceeded:
+The browser-performance job runs three Lighthouse samples against `/start` in a simulated mobile Chromium profile. It evaluates the median of the timing and score metrics, while taking the maximum observed Google Identity Services request count. This reduces false alarms from a single transient CI runner or network spike. The job fails when any of these thresholds are exceeded:
 
 | Metric | Threshold |
 |---|---:|
@@ -17,7 +17,7 @@ The browser-performance job runs Lighthouse against `/start` in a simulated mobi
 | Total Blocking Time | At most 200 ms |
 | Initial Google Identity Services requests | Exactly 0 |
 
-Each job uploads JSON artifacts retained for 14 days. The artifacts provide a time-stamped history of the smoke checks and Lighthouse metrics without requiring a separate database.
+Each job uploads JSON artifacts retained for 14 days. The artifacts include all three raw Lighthouse runs plus the aggregated summary, providing a time-stamped history of the smoke checks and Lighthouse metrics without requiring a separate database.
 
 ## Optional Sentry summary
 
