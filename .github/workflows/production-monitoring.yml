@@ -1,0 +1,130 @@
+name: Production monitoring
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  pull_request:
+    paths:
+      - '.github/workflows/production-monitoring.yml'
+      - 'scripts/monitor-production.mjs'
+      - 'scripts/check-lighthouse.mjs'
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: 'Production URL to monitor'
+        required: false
+        default: 'https://business-operating-system-pied.vercel.app'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-monitoring
+  cancel-in-progress: false
+
+env:
+  PRODUCTION_URL: ${{ inputs.production_url || vars.PRODUCTION_URL || 'https://business-operating-system-pied.vercel.app' }}
+
+jobs:
+  production-smoke:
+    name: Production smoke and error rate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Run production smoke monitor
+        run: node scripts/monitor-production.mjs
+
+      - name: Upload smoke results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-smoke-${{ github.run_id }}
+          path: monitor-results/production-smoke.json
+          if-no-files-found: error
+          retention-days: 14
+
+  core-web-vitals:
+    name: Core Web Vitals and browser performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Run Lighthouse samples
+        run: |
+          mkdir -p monitor-results
+          for sample in 1 2 3; do
+            npx --yes lighthouse@12.8.2 "$PRODUCTION_URL/start" \
+              --output=json \
+              --output-path="monitor-results/lighthouse-${sample}.json" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --form-factor=mobile \
+              --screen-emulation.mobile=true \
+              --throttling-method=simulate \
+              --max-wait-for-load=30000 \
+              --no-enable-error-reporting \
+              --quiet
+          done
+
+      - name: Enforce median performance thresholds
+        run: node scripts/check-lighthouse.mjs monitor-results/lighthouse-1.json monitor-results/lighthouse-2.json monitor-results/lighthouse-3.json
+
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ github.run_id }}
+          path: |
+            monitor-results/lighthouse-*.json
+            monitor-results/lighthouse-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
+  sentry-summary:
+    name: Optional Sentry error summary
+    runs-on: ubuntu-latest
+    if: ${{ vars.SENTRY_ORG != '' && vars.SENTRY_PROJECT != '' }}
+    timeout-minutes: 5
+    steps:
+      - name: Verify Sentry token is configured
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: test -n "$SENTRY_AUTH_TOKEN" || { echo '::error::SENTRY_AUTH_TOKEN is required when SENTRY_ORG and SENTRY_PROJECT are configured'; exit 1; }
+
+      - name: Query recent Sentry error counts
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+        run: |
+          set -euo pipefail
+          mkdir -p monitor-results
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
+            "https://sentry.io/api/0/organizations/${SENTRY_ORG}/stats-summary/?field=sum(times_seen)&statsPeriod=1h&interval=1h&project=${SENTRY_PROJECT}&category=error" \
+            --output monitor-results/sentry-error-summary.json
+          cat monitor-results/sentry-error-summary.json
+
+      - name: Upload Sentry summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentry-${{ github.run_id }}
+          path: monitor-results/sentry-error-summary.json
+          if-no-files-found: ignore
+          retention-days: 14
