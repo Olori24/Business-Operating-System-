@@ -27,8 +27,8 @@ async function sendOutboundWebhook({ url: rawUrl, payload = {}, headers = {}, ti
       response: text.slice(0, 4000),
     };
   } catch (error) {
-    if (error.name === 'AbortError') throw new Error('OUTBOUND_WEBHOOK_TIMEOUT');
-    throw new Error(`OUTBOUND_WEBHOOK_FAILED:${error.message}`);
+    if (error.name === 'AbortError') throw new Error('OUTBOUND_WEBHOOK_TIMEOUT', { cause: error });
+    throw new Error(`OUTBOUND_WEBHOOK_FAILED:${error.message}`, { cause: error });
   } finally {
     clearTimeout(timer);
   }
