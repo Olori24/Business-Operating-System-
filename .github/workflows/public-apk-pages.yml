@@ -68,4 +68,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Write deployment URL
-        run: echo "Public APK page: ${{ steps.deployment.outputs.page_url }}"
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          echo "Public APK page: ${PAGE_URL}"
