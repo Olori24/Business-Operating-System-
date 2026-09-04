@@ -31,7 +31,7 @@ async function main() {
   const pages = [
     ['/', 'BOS — Business Operating System'],
     ['/start', 'BOS — Create your workspace'],
-    ['/dashboard', 'BOS — Workspace'],
+    ['/dashboard', 'BOS — Operations'],
   ];
 
   for (const [route, expectedTitle] of pages) {
