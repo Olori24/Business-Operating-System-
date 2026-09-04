@@ -14,8 +14,10 @@ jobs:
           BOS_CRON_URL: ${{ secrets.BOS_CRON_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          test -n "$BOS_CRON_URL"
-          test -n "$CRON_SECRET"
+          if [ -z "$BOS_CRON_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "BOS scheduler secrets are not configured; skipping this tick."
+            exit 0
+          fi
           curl --fail-with-body --silent --show-error --max-time 30 \
             -H "Authorization: Bearer $CRON_SECRET" \
             "$BOS_CRON_URL/api/v1/cron"
