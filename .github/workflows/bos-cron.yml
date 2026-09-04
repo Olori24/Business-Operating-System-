@@ -1,0 +1,21 @@
+name: BOS Scheduler
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run BOS scheduler and worker
+        env:
+          BOS_CRON_URL: ${{ secrets.BOS_CRON_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$BOS_CRON_URL"
+          test -n "$CRON_SECRET"
+          curl --fail-with-body --silent --show-error --max-time 30 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$BOS_CRON_URL/api/v1/cron"
