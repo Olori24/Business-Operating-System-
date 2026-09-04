@@ -3,582 +3,606 @@
 > **The programmable operating layer for modern businesses.**
 
 ![Version](https://img.shields.io/badge/version-v1.0.0-blue)
-![Status](https://img.shields.io/badge/status-production--ready-success)
+![Status](https://img.shields.io/badge/status-production%20SaaS%20foundation-success)
 ![Architecture](https://img.shields.io/badge/architecture-modular-success)
 ![Multi--Tenant](https://img.shields.io/badge/multi--tenant-ready-success)
-![CI](https://img.shields.io/badge/CI-green-success)
-![Security](https://img.shields.io/badge/security-first-blue)
+![Node](https://img.shields.io/badge/node-%3E%3D22-green)
+![CI](https://img.shields.io/badge/CI-GitHub%20Actions-success)
 
 ---
 
 ## Overview
 
-**Business Operating System (BOS)** is a modular, multi-tenant execution platform designed to coordinate **business workflows, automation, AI employees, integrations, and commercial operations** from a common operational foundation.
+**Business Operating System (BOS)** is a modular, multi-tenant SaaS platform for running business operations through configurable workflows, integrations, events, notifications, and durable automation.
 
-BOS is built around a simple idea:
+The core idea is simple:
 
-> **Businesses should be able to configure how work gets done once, then let the system reliably execute, recover, observe, govern, measure, and scale that work.**
+> **Configure how work should happen once, then let BOS execute it, recover from failures, record what happened, and keep the business in control.**
 
-Instead of assembling a different automation stack for every company, BOS provides a shared execution layer on which businesses can run workflows, teams, AI employees, integrations, subscriptions, and operational processes.
-
----
-
-# Vision
-
-Build a **global business execution platform** that allows organizations of different sizes and industries to operate recurring processes through one reliable, programmable system.
-
-The long-term vision is a business operating layer where:
-
-- humans define goals and policies;
-- workflows coordinate work;
-- AI employees perform bounded tasks;
-- integrations connect existing business systems;
-- the execution engine handles retries and recovery;
-- observability makes important operations traceable;
-- governance keeps humans in control of high-risk actions;
-- commercial infrastructure makes the platform viable at scale.
-
-BOS is intentionally designed as a **platform**, not a single vertical application.
+BOS is being built as a platform rather than a single industry-specific application. A business can create a workspace, invite its team, connect integrations, define workflows, publish automations, and monitor execution from one operational layer.
 
 ---
 
-# Why BOS?
+## What BOS Provides
 
-Modern businesses commonly assemble operations from disconnected tools:
+### Identity & Account Lifecycle
+
+- Email registration and login
+- Session-based authentication
+- Logout and session revocation
+- Email verification lifecycle
+- Password reset lifecycle
+- Google authentication support when configured
+- Protected API boundaries
+
+### Multi-Tenant Workspaces
+
+- Workspace creation and ownership
+- Workspace membership
+- Role-aware access boundaries
+- Workspace listing and switching
+- Invitation acceptance
+- Tenant-scoped persistence
+- Server-side authorization boundaries
+
+BOS treats tenant isolation as a platform requirement. Workspace identifiers supplied by clients must never be treated as sufficient authorization by themselves.
+
+### Workflow Automation
+
+- Workflow definitions
+- Draft/published lifecycle
+- Workflow version persistence
+- Enable/disable controls
+- Trigger definitions
+- Conditions and branching
+- Action execution
+- Execution history
+- Step-level execution records
+- Retry handling
+- Idempotency keys
+- Scheduled workflow execution
+
+### Durable Execution
+
+BOS persists execution state in PostgreSQL rather than relying on an in-memory queue alone.
+
+The execution path is designed around:
 
 ```text
-CRM + spreadsheets + messaging + automation + AI + scheduling + payments
-                              ↓
-                     fragmented operations
+Trigger
+   ↓
+Workflow version
+   ↓
+Execution record
+   ↓
+Durable job
+   ↓
+Worker
+   ↓
+Step execution
+   ↓
+Success / retry / failure
+   ↓
+Audit + observability
 ```
 
-BOS aims to provide the execution layer underneath those operations:
+The system is designed for retries and recovery. It does **not** claim distributed exactly-once delivery for arbitrary external systems; integrations must provide or participate in appropriate idempotency mechanisms where supported.
+
+### Integrations & Webhooks
+
+The platform includes an extensible integration foundation for business systems and external services.
+
+Current production foundations include:
+
+- Integration records and connection state
+- Encrypted credential storage architecture
+- Outbound webhook actions
+- WhatsApp action integration hooks
+- Signed inbound webhook boundaries
+- Event persistence
+- Duplicate/idempotency protection
+- Connection status and lifecycle handling
+
+External provider credentials are designed to remain server-side and must not be exposed to the browser.
+
+### Notifications & Audit
+
+BOS records operational events that matter to businesses and administrators:
+
+- Workflow failures
+- Important workflow events
+- Integration failures
+- Account events
+- Workspace events
+- Notifications
+- Audit records
+
+Audit records are designed to capture the actor, workspace, action, resource, timestamp, and relevant metadata without storing passwords or raw credentials.
+
+### Operational Dashboard
+
+The `/dashboard` experience is backed by live API/database data rather than hard-coded production metrics.
+
+The operational view can surface:
+
+- Active workflows
+- Successful executions
+- Failed executions
+- Queued work
+- Connected integrations
+- Recent activity
+- Notifications
+- Operational attention areas
+
+---
+
+## Architecture
 
 ```text
                          BUSINESS OPERATING SYSTEM
-                                      │
-             ┌────────────────────────┼────────────────────────┐
-             │                        │                        │
-         Workflows                  AI                    Integrations
-             │                    Employees                    │
-             └────────────────────────┼────────────────────────┘
-                                      │
-                              Execution Engine
-                                      │
-                 ┌────────────────────┼────────────────────┐
-                 │                    │                    │
-             Persistence          Recovery          Observability
-                 │                    │                    │
-                 └────────────────────┼────────────────────┘
-                                      │
-                              Commercial Layer
-                                      │
-                     Billing • Usage • Entitlements
+
+                              Web / API Layer
+                                     │
+                           Identity & Authorization
+                                     │
+                          Workspace / Tenant Context
+                                     │
+             ┌───────────────────────┼───────────────────────┐
+             │                       │                       │
+         Workflows              Integrations              Events
+             │                       │                       │
+             └───────────────────────┼───────────────────────┘
+                                     │
+                            Durable Execution Layer
+                                     │
+                    ┌────────────────┼────────────────┐
+                    │                │                │
+                  Jobs           Scheduler         Worker
+                    │                │                │
+                    └────────────────┼────────────────┘
+                                     │
+                             PostgreSQL State
+                                     │
+            ┌────────────────────────┼────────────────────────┐
+            │                        │                        │
+        Executions              Notifications              Audit
+            │                        │                        │
+            └────────────────────────┼────────────────────────┘
+                                     │
+                            External Integrations
 ```
 
----
-
-# Core Capabilities
-
-## Execution
-
-- Workflow orchestration
-- Queue-based execution
-- Distributed worker runtime
-- Worker leases and ownership protection
-- Heartbeats and lease expiration
-- Retry and failure handling
-- Recovery-aware execution
-- Idempotency protection
-
-## Data & Platform Foundation
-
-- PostgreSQL persistence foundation
-- Durable orchestration state
-- Tenant-scoped repositories
-- Transactional persistence boundaries
-- Durable event infrastructure
-- Production API foundations
-- Identity and authorization boundaries
-- Reusable platform packages
-
-## AI Employees
-
-- AI employee runtime
-- Agent identity
-- Tool permissions
-- Agent memory and context
-- Policy and guardrail boundaries
-- Planning, execution, and verification
-- Human approval workflows
-- AI/business automation primitives
-
-## Multi-Tenancy & Security
-
-- Tenant-aware persistence boundaries
-- Organizations and teams
-- Roles and permissions
-- Cross-tenant isolation controls
-- API keys
-- Signed webhook boundaries
-- Auditability and governance
-
-## Commercial Platform
-
-- Customer onboarding
-- Subscription lifecycle
-- Usage metering
-- Plan entitlements
-- Tenant API keys
-- Integration registry
-- Commercial reporting
-- Commercial audit trails
-- Production launch certification
+The repository intentionally keeps the business execution layer modular so additional integrations, triggers, actions, and product surfaces can be added without replacing the core platform.
 
 ---
 
-# Architecture
+## Production SaaS Data Model
+
+The production schema foundation is maintained in:
 
 ```text
-                         BUSINESS OPERATING SYSTEM
-
-                                  API / Apps
-                                      │
-                              Identity & Tenancy
-                                      │
-                    ┌─────────────────┴─────────────────┐
-                    │                                   │
-                Workflows                          Integrations
-                    │                                   │
-                    └─────────────────┬─────────────────┘
-                                      │
-                             Orchestration Layer
-                                      │
-              ┌───────────────────────┼───────────────────────┐
-              │                       │                       │
-           Queue                  Scheduler               Event Bus
-              │                       │                       │
-              └───────────────────────┼───────────────────────┘
-                                      │
-                              Worker Runtime
-                                      │
-                       ┌──────────────┴──────────────┐
-                       │                             │
-                 Lease/Heartbeat               Execution
-                       │                             │
-                       └──────────────┬──────────────┘
-                                      │
-                               Durable State
-                                      │
-                                  PostgreSQL
-                                      │
-                       ┌──────────────┴──────────────┐
-                       │                             │
-                   Recovery                    Idempotency
-                                      │
-                              Commercial Layer
-                                      │
-                   Billing • Usage • Entitlements
+packages/persistence/saas_schema.sql
 ```
 
-The architecture is modular so core platform infrastructure can evolve independently from business-specific capabilities.
+It provides durable structures for:
+
+- Workspace memberships
+- Workspace invitations
+- Integrations
+- Workflows
+- Workflow versions
+- Workflow executions
+- Execution steps
+- Events
+- Durable jobs
+- Notifications
+- Audit logs
+- Billing accounts
+
+The schema includes foreign keys, uniqueness constraints, indexes, timestamps, and workspace-scoped relationships intended to keep tenant data separated at the persistence layer.
+
+The production store applies the SaaS schema during initialization.
 
 ---
 
-# Reliability Model
+## Authentication & Security
 
-BOS is designed around the assumption that distributed systems fail.
+Security-sensitive operations are handled server-side.
 
-A worker can disappear. A network call can fail. A process can restart. A job can be delivered more than once. An external service can become unavailable.
+The platform includes foundations for:
 
-The execution architecture therefore uses explicit reliability mechanisms:
+- Signed session cookies
+- Session revocation
+- Password hashing
+- Verification/reset tokens stored as hashes
+- Token expiry and invalidation
+- Google credential verification
+- Workspace membership checks
+- Tenant-scoped queries
+- Signed webhook verification
+- Encrypted integration credentials
+- Audit logging
+
+### Required production secrets
+
+Never commit real credentials. Configure environment variables through the deployment platform or secret manager.
+
+The committed `.env.example` documents the required configuration, including:
 
 ```text
-Job
- │
- ▼
-Claim
- │
- ▼
-Lease
- │
- ├── heartbeat ───────────────┐
- │                            │
- ▼                            │
-Execute                       │
- │                            │
- ├── success → complete       │
- │                            │
- ├── transient failure         │
- │       ↓                    │
- │     retry/backoff          │
- │                            │
- └── worker failure            │
-         ↓                    │
-    lease expires             │
-         ↓                    │
-    safe reclamation ◄────────┘
+DATABASE_URL
+GOOGLE_CLIENT_ID
+BOS_SESSION_SECRET
+BOS_ENCRYPTION_KEY
+BOS_WEBHOOK_SECRET
+CRON_SECRET
+BOS_APP_URL
+RESEND_API_KEY
+BOS_EMAIL_FROM
+PORT
+LOG_LEVEL
+WHATSAPP_GRAPH_VERSION
+SENTRY_DSN
 ```
 
-BOS also uses idempotency protections to reduce duplicate effects during retries and recovery.
-
-**Important:** application-level idempotency does not magically create distributed exactly-once delivery for external systems. External integrations must participate in idempotency where their APIs support it.
+`BOS_ENCRYPTION_KEY` must be generated as 32 random bytes represented by 64 hexadecimal characters.
 
 ---
 
-# Foundation 2.0 — Missions 041–050
+## Scheduling on Vercel Hobby
 
-The first major foundation phase was focused on making the **next 100 features cheap, safe, testable, maintainable, and scalable**.
+BOS supports scheduled workflow execution through the durable job system.
 
-### 10/10 missions completed
-
-| Mission | Capability | Status |
-|---|---|---|
-| **041** | Production Data Layer Hardening | ✅ |
-| **042** | Durable Event Infrastructure | ✅ |
-| **043** | Production API Foundation | ✅ |
-| **044** | Identity & Multi-Tenancy | ✅ |
-| **045** | Security / Authorization Foundation | ✅ |
-| **046** | Canonical Workflow Engine | ✅ |
-| **047** | Workflow Versioning & Lifecycle | ✅ |
-| **048** | Scheduler & Advanced Execution | ✅ |
-| **049** | Human Approval & Governance | ✅ |
-| **050** | Integration Platform Foundation | ✅ |
-
-### Phase outcome
-
-BOS gained reusable primitives for data, events, APIs, identity, security, workflows, scheduling, approvals, and integrations so future features do not repeatedly reinvent core infrastructure.
-
----
-
-# AI + Business Automation — Missions 051–060
-
-The second major phase turned the infrastructure into an **AI-powered execution platform**.
-
-### 10/10 missions completed
-
-| Mission | Capability | Status |
-|---|---|---|
-| **051** | AI Employee Runtime | ✅ |
-| **052** | Agent Identity, Tools & Permissions | ✅ |
-| **053** | Agent Memory & Context | ✅ |
-| **054** | Agent Policy & Guardrails | ✅ |
-| **055** | Planning, Execution & Verification | ✅ |
-| **056** | Business Automation Engine | ✅ |
-| **057** | Triggers, Rules & Conditional Automation | ✅ |
-| **058** | AI + Human Collaboration | ✅ |
-| **059** | Automation Observability & Cost Controls | ✅ |
-| **060** | AI Employee Production Readiness | ✅ |
-
-### Phase outcome
-
-BOS can now model AI employees as governed execution capabilities with explicit identity, tools, permissions, memory, policies, verification, human oversight, and operational controls.
-
----
-
-# Commercial Platform — Missions 061–070
-
-The third major phase converted the platform foundation into a **commercial SaaS substrate** capable of supporting customer onboarding and controlled business usage.
-
-### 10/10 missions completed
-
-| Mission | Capability | Status |
-|---|---|---|
-| **061** | Production Customer Onboarding | ✅ |
-| **062** | Subscription Lifecycle | ✅ |
-| **063** | Tenant Usage Metering | ✅ |
-| **064** | Plan Entitlements | ✅ |
-| **065** | Tenant API Keys | ✅ |
-| **066** | Signed Webhook Delivery | ✅ |
-| **067** | Integration Registry Hardening | ✅ |
-| **068** | Commercial Reporting & Audit | ✅ |
-| **069** | Commercial Production Readiness | ✅ |
-| **070** | Commercial Launch Certification | ✅ |
-
-### Phase outcome
-
-BOS now has a commercial foundation for onboarding organizations, managing subscriptions, measuring usage, enforcing entitlements, exposing tenant credentials, delivering signed webhooks, managing integrations, and producing commercial/audit records.
-
----
-
-# Production Readiness
-
-Mission 040 established the repository-level **production-readiness certification framework**. Mission 070 extended that discipline into the commercial platform.
-
-The completed platform path includes:
-
-- PostgreSQL persistence
-- Durable orchestration state
-- Distributed workers
-- Durable worker leases
-- Failure and retry infrastructure
-- Observability foundations
-- Tenant isolation controls
-- Production health/readiness contracts
-- Customer onboarding
-- Organizations and team management
-- AI employee runtime
-- Agent permissions and policies
-- Workflow automation
-- Integration infrastructure
-- Subscription lifecycle
-- Usage metering
-- Plan entitlements
-- Tenant API keys
-- Signed webhooks
-- Commercial reporting and audit
-- Deployment and rollback gates
-- Disaster-recovery requirements
-- Security audit gates
-- Commercial launch certification
-
-### Important deployment boundary
-
-**BOS is repository-certified for its production architecture and commercial foundation, but repository certification is not the same as a live global production deployment.**
-
-A real launch still requires environment-specific controls such as managed infrastructure, secrets, DNS/TLS, external-provider approvals, load testing, penetration testing, backup/restore verification, payment-provider readiness, monitoring, incident response, and a real disaster-recovery exercise.
-
-The project intentionally does not confuse a green CI pipeline with proof that every production environment is operationally ready.
-
----
-
-# Engineering Principles
-
-BOS follows a strict engineering discipline:
-
-1. **Security first**
-2. **Verification before completion**
-3. **Small, testable changes**
-4. **Architecture before features**
-5. **Documentation accompanies features**
-6. **Tenant isolation by design**
-7. **Failure is a normal operating condition**
-8. **Human authority for high-risk autonomous actions**
-9. **No merge without verification**
-10. **Production claims must match demonstrated capability**
-
-Every significant capability follows:
+For the current Vercel Hobby-compatible deployment model, recurring execution is exposed through:
 
 ```text
-Design
-  ↓
-Architecture
-  ↓
-Implementation
-  ↓
-Tests
-  ↓
-CI
-  ↓
-Review
-  ↓
-Merge
+GET /api/v1/cron
 ```
 
----
+The endpoint requires the `CRON_SECRET` bearer credential and processes queued jobs plus due scheduled workflows.
 
-# Current Mission Progress
+Because the Vercel Hobby plan does not support the sub-daily Cron schedule required for frequent business automation, the repository includes an external scheduler workflow:
 
 ```text
-024–040  Core + Production Foundation       ✅ COMPLETE
-041–050  Foundation 2.0                     ✅ 10/10
-051–060  AI + Business Automation           ✅ 10/10
-061–070  Commercial Platform                ✅ 10/10
-
-                         47 missions tracked
-                         ────────────────────
-                         Production foundation
-                         + AI execution
-                         + commercial substrate
+.github/workflows/bos-cron.yml
 ```
 
-The current architecture is designed so future capabilities can be added on top of stable primitives rather than repeatedly rebuilding infrastructure.
+The workflow can invoke the BOS cron endpoint on a recurring interval and can also be triggered manually.
 
----
-
-# AI + BOS
-
-AI is treated as an **execution capability**, not as an unrestricted authority layer.
-
-AI employees and automation components operate inside defined business workflows and policies while the platform retains explicit boundaries around authorization, verification, recovery, governance, and high-risk actions.
-
-The model is:
+Required GitHub Actions secrets/variables for that scheduler include:
 
 ```text
-Business goal
-     ↓
-Policy
-     ↓
-Workflow
-     ↓
-AI employee / automation
-     ↓
-Verification
-     ↓
-Human approval where required
-     ↓
-Execution
-     ↓
-Audit
+BOS_CRON_URL
+CRON_SECRET
 ```
 
-This creates a foundation for AI systems that can perform useful business work without turning business-critical actions into uncontrolled black boxes.
+For higher-scale production workloads, the scheduler should be moved to infrastructure designed for the required execution frequency and reliability characteristics.
 
 ---
 
-# OAE Relationship
+## API Health
 
-**OAE (Open Autonomous Engineer)** is maintained as a separate engineering system.
-
-OAE can operate BOS through governed repository workflows, while BOS remains the business execution platform.
-
-The intended relationship is:
+The catch-all API exposes a lightweight health contract:
 
 ```text
-                 OAE
-       Engineering Control Plane
-                  │
-        build / verify / govern
-                  │
-                  ▼
-                 BOS
-        Business Execution Plane
-                  │
-       ┌──────────┼──────────┐
-       ▼          ▼          ▼
-    Business A  Business B  Business C
+GET /api/health
 ```
 
-Keeping the systems separate preserves a clean boundary between **engineering intelligence** and **business execution**.
+Expected response:
+
+```json
+{
+  "status": "ok",
+  "service": "bos-api"
+}
+```
+
+Health availability does not by itself prove that every external integration, database dependency, or background worker is healthy. Production monitoring should use dependency-aware readiness and operational checks as appropriate.
 
 ---
 
-# Testing
+## Repository Structure
 
-BOS uses automated repository verification through GitHub Actions.
-
-The CI pipeline verifies repository structure, deterministic dependency installation, high-severity dependency vulnerabilities, lint rules, the complete repository test suite, coverage thresholds, production-readiness modules, and commercial platform certification gates.
-
-Run the same quality gates locally:
-
-```bash
-npm ci
-npm run lint
-npm run test
-npm audit --audit-level=high
+```text
+.
+├── api/                         # Deployment-facing serverless API entrypoint
+├── apps/
+│   ├── api/                     # Core HTTP application
+│   └── dashboard/               # Browser-facing dashboard surfaces
+├── modules/
+│   ├── automation/              # Workflow execution and automation
+│   ├── billing/                 # Billing domain foundations
+│   ├── integrations/            # Integration capabilities
+│   ├── queue/                   # Queue primitives
+│   ├── scheduler/               # Scheduling primitives
+│   └── ...                      # Other domain modules
+├── packages/
+│   ├── auth/                    # Authentication and account lifecycle
+│   ├── authz/                   # Authorization primitives
+│   ├── persistence/             # PostgreSQL production store/schema
+│   ├── observability/           # Logging/observability
+│   └── ...                      # Shared platform packages
+├── ops/                         # Production, security and recovery controls
+├── scripts/                     # Development and operational scripts
+├── tests/                       # Additional focused tests
+├── .github/workflows/           # CI and external scheduler automation
+├── docker-compose*.yml          # Local/integration environments
+├── vercel.json                  # Vercel routing/deployment configuration
+└── package.json                 # Runtime and test commands
 ```
-
-The test command enforces a minimum of **60% line coverage** and **50% branch coverage** through c8. Test output is written to the terminal and is captured by CI as `test-output.log` when a run fails.
-
-The project follows a strict rule:
-
-> **Green CI is required before a production mission is merged.**
 
 ---
 
-# Development
+## Development
 
-Clone the repository:
+### Requirements
+
+- Node.js **22 or newer**
+- PostgreSQL for persistence/integration testing
+- Docker is recommended for local integration testing
+
+### Install
 
 ```bash
 git clone https://github.com/Olori24/Business-Operating-System-.git
 cd Business-Operating-System-
-```
-
-Install the exact dependency graph recorded in the lockfile:
-
-```bash
 npm ci
 ```
 
-Run linting and tests:
+### Run locally
 
 ```bash
-npm run lint
-npm run test
+npm run dev
 ```
 
-Start the API locally:
+or:
 
 ```bash
 npm start
 ```
 
-For a self-contained API and PostgreSQL environment, use Docker Compose:
+### Quality checks
 
 ```bash
-docker compose up --build
+npm run lint
+npm run typecheck
+npm test
+npm audit --audit-level=high
 ```
 
-The API health contract is available at [http://localhost:3000/health](http://localhost:3000/health) and [http://localhost:3000/api/health](http://localhost:3000/api/health). The committed `.env.example` documents all runtime variables, including `PORT`, `LOG_LEVEL`, and `WHATSAPP_GRAPH_VERSION`.
+### Integration testing
+
+With a local PostgreSQL environment:
+
+```bash
+npm run test:integration
+```
+
+Or use the repository's test Docker environment:
+
+```bash
+npm run test:integration:local
+```
+
+The test suite uses c8 coverage enforcement with the repository's configured minimums of **60% line coverage** and **50% branch coverage**.
 
 ---
 
-# Security
+## Deployment
 
-Security is a first-class architectural concern.
+BOS is configured for Vercel-compatible deployment through the repository's deployment configuration.
 
-The repository includes security and tenant-isolation controls, while production deployment additionally requires environment-specific secret management, infrastructure hardening, penetration testing, backup validation, and operational monitoring.
+The deployment model currently uses a consolidated API catch-all to stay within serverless-function limits on the Vercel Hobby plan.
 
-For security issues, follow the repository's security reporting guidance rather than publicly disclosing vulnerabilities.
+Before a real production launch, configure and verify at minimum:
 
----
+1. PostgreSQL database and connectivity
+2. Session and encryption secrets
+3. Webhook secret
+4. Cron authentication secret
+5. Application URL
+6. Email provider/domain if account emails are enabled
+7. Google OAuth configuration if Google sign-in is enabled
+8. External integration credentials
+9. Monitoring/error reporting
+10. GitHub scheduler secrets if using the included external scheduler
+11. DNS/TLS and production domain
+12. Backup and restore procedures
+13. Load/performance testing
+14. Security testing and incident-response procedures
 
-# Roadmap Beyond Mission 070
-
-The next evolution of BOS should focus on turning the certified platform into a **live, globally deployable business operating service**.
-
-Potential priorities include:
-
-- production cloud infrastructure;
-- deeper business vertical templates;
-- richer AI employee capabilities;
-- additional integrations;
-- customer-facing web applications;
-- advanced analytics;
-- workflow marketplace capabilities;
-- enterprise policy controls;
-- large-scale distributed execution;
-- performance and load engineering;
-- multi-region operations;
-- compliance automation;
-- global commercial deployment.
-
-The platform is designed to grow without forcing every business into the same workflow model.
+A successful deployment build is necessary but is **not sufficient evidence of production readiness**.
 
 ---
 
-# Project Status
+## Workflow Execution Model
 
-**BOS v1.0.0 — Core, AI, automation, and commercial platform milestones completed.**
+A published workflow follows the durable execution path:
 
-Current completed milestones:
+```text
+                  Workflow definition
+                          │
+                          ▼
+                    Published version
+                          │
+             ┌────────────┼────────────┐
+             │            │            │
+          webhook       manual      schedule
+             │            │            │
+             └────────────┼────────────┘
+                          ▼
+                    Execution record
+                          │
+                          ▼
+                     Durable job
+                          │
+                          ▼
+                        Worker
+                          │
+                ┌─────────┴─────────┐
+                │                   │
+             execute             failure
+                │                   │
+                ▼                   ▼
+             complete          retry/backoff
+                                    │
+                                    ▼
+                                terminal
+```
 
-- **Core / Production Foundation:** Missions 024–040 ✅
-- **Foundation 2.0:** Missions 041–050 — **10/10** ✅
-- **AI + Business Automation:** Missions 051–060 — **10/10** ✅
-- **Commercial Platform:** Missions 061–070 — **10/10** ✅
-
-The project is now moving from **platform construction toward live commercial deployment and scale validation**.
+Execution and step records provide a durable history that can be used by the dashboard and operational tooling.
 
 ---
 
-# Author
+## Reliability Boundaries
 
-**Bolaji Akande**
+BOS is designed with failure as a normal operating condition.
 
+The system protects against common failure modes through:
+
+- Durable job records
+- Transactional job claiming
+- `FOR UPDATE SKIP LOCKED` queue selection
+- Retry state
+- Execution status persistence
+- Idempotency keys for scheduled execution
+- Durable workflow versions
+- Event persistence
+- Audit records
+
+However, no application-level architecture can guarantee that an arbitrary third-party API behaves exactly once. External side effects require provider-aware idempotency, reconciliation, and retry policies.
+
+---
+
+## Product Boundaries
+
+BOS currently represents a **production SaaS foundation**, not a claim that every possible commercial feature is fully implemented.
+
+In particular:
+
+- The billing data model/foundation exists, but a complete payment-provider checkout and subscription-billing implementation must be verified before claiming end-to-end payment processing.
+- External integrations must be individually configured and tested; a registered integration is not automatically a live connection.
+- The external GitHub scheduler requires its repository secrets to be configured before scheduled jobs will run.
+- Production readiness requires environment-specific validation beyond repository tests.
+
+These boundaries are documented deliberately so project status remains aligned with demonstrated capability.
+
+---
+
+## Roadmap
+
+The next stages of BOS focus on moving from production foundation to a mature commercial service:
+
+- Complete end-to-end visual workflow builder integration
+- Expand trigger/action catalog
+- Production-grade integration connection flows
+- Full billing provider integration and entitlement enforcement
+- Account/profile/settings surfaces
+- Advanced rate limiting and abuse controls
+- Operational alerting and incident workflows
+- Queue scaling and worker concurrency controls
+- Usage analytics and customer reporting
+- Comprehensive end-to-end browser testing
+- Load testing and performance budgets
+- Backup/restore automation
+- Security assessment and penetration testing
+- Enterprise controls and compliance automation
+- Multi-region execution where scale requires it
+
+---
+
+## Engineering Principles
+
+1. **Do not rebuild working systems without evidence.**
+2. **Tenant isolation is mandatory.**
+3. **Persist important operational state.**
+4. **Treat failures and retries as normal.**
+5. **Never expose secrets to clients.**
+6. **Verify before claiming completion.**
+7. **Keep integrations explicit about their real connection state.**
+8. **Use audit trails for important business actions.**
+9. **Prefer small, testable architectural changes.**
+10. **Production claims must match demonstrated capability.**
+
+The operating loop is:
+
+```text
+Inspect
+  ↓
+Design
+  ↓
+Implement
+  ↓
+Test
+  ↓
+Verify
+  ↓
+Deploy
+  ↓
+Observe
+  ↓
+Improve
+```
+
+---
+
+## OAE Relationship
+
+**OAE (Open Autonomous Engineer)** is a separate engineering system focused on autonomous software engineering.
+
+The intended boundary is:
+
+```text
+OAE
+Engineering Control Plane
+        │
+        │ build / inspect / verify / govern
+        ▼
+BOS
+Business Execution Plane
+        │
+        ├── Workflows
+        ├── Integrations
+        ├── Events
+        └── Business operations
+```
+
+Keeping the systems separate preserves a clean distinction between engineering automation and business execution.
+
+---
+
+## Project Status
+
+**BOS v1.0.0 — production SaaS foundation in active hardening and deployment.**
+
+The current repository includes the production SaaS foundation for:
+
+- Authentication and account lifecycle
+- Multi-tenant workspaces
+- Membership and invitations
+- Durable workflow versions
+- Workflow executions
+- Durable jobs
+- Scheduled execution
+- Webhook/event ingestion foundations
+- Integrations and credential protection
+- Notifications
+- Audit logging
+- Operational dashboard
+- PostgreSQL persistence
+- CI and automated verification
+- Vercel-compatible deployment
+- External scheduling for Vercel Hobby deployments
+
+The project is moving from **platform construction into live production validation, commercial completion, and scale engineering**.
+
+---
+
+## Author
+
+**Bolaji Akande**  
 Founder / Builder
 
 Building business infrastructure and autonomous systems for the future of work.
 
 GitHub: https://github.com/Olori24
-
----
-
-## Philosophy
-
-> **Build the operating layer. Let businesses build on top of it.**
-
----
-
-**Business Operating System — infrastructure for businesses that want their operations to run.**
