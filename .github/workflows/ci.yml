@@ -7,6 +7,7 @@ on:
       - mission-030-observability
       - phase-061-070-commercial-platform
       - mission/datafactor-70-score
+      - mission-production-saas
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -42,7 +43,6 @@ jobs:
           test -f .env.example
       - name: Audit dependencies
         run: npm audit --audit-level=high
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -55,7 +55,6 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run lint
-
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
@@ -68,7 +67,6 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
-
   tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -97,7 +95,6 @@ jobs:
           name: bos-test-output
           path: test-output.log
           if-no-files-found: error
-
   postgres-integration:
     name: PostgreSQL integration
     runs-on: ubuntu-latest
