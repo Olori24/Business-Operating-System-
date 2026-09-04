@@ -33,7 +33,7 @@ const launchPath = path.join(__dirname, '..', 'dashboard', 'launch-readiness.htm
 async function storeRequired(){const store=await getProductionStore();if(!store)throw new Error('DATABASE_NOT_CONFIGURED');return store;}
 async function record(tenantId,type,value){const store=await storeRequired();const id=value.id||crypto.randomUUID();return store.repository.save(tenantId,type,id,{...value,id});}
 async function integration(tenantId,type,id){const store=await storeRequired();return store.repository.find(tenantId,type,id);}
-async function authenticate(req){const session=await getSession(parseCookies(req).bos_session);if(!session)return null;const workspace=await getWorkspaceForUser(session.user_id);return{session,user:{id:session.user_id,email:session.email,name:session.name},workspace,tenantId:workspace?.tenantId||null};}
+async function authenticate(req){const session=await getSession(parseCookies(req).bos_session);if(!session)return null;const workspace=await getWorkspaceForUser(session.user_id,session.active_workspace_id);return{session,user:{id:session.user_id,email:session.email,name:session.name},workspace,tenantId:workspace?.tenantId||null};}
 async function requireAuth(req){const auth=await authenticate(req);if(!auth){const e=new Error('UNAUTHENTICATED');e.statusCode=401;throw e;}return auth;}
 function htmlResponse(res,filePath){try{const html=fs.readFileSync(filePath,'utf8');res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end(html);}catch{jsonResponse(res,500,{status:'error',code:'PAGE_UNAVAILABLE'});}}
 function readJson(req){return new Promise((resolve,reject)=>{let body='';req.setEncoding('utf8');req.on('data',chunk=>{body+=chunk;if(body.length>100000)req.destroy();});req.on('end',()=>{try{resolve(body?JSON.parse(body):{});}catch{reject(new Error('INVALID_JSON'));}});req.on('error',reject);});}
@@ -63,7 +63,7 @@ async function requestHandler(req,res){recordRequest();const context=requestCont
 
   const auth=await authenticate(req);
   if(await handleWorkflowControl({req,res,url,auth}))return;
-  if(await handleSaaSRoute({req,res,url,auth}))return;
+  if(auth && await handleSaaSRoute({req,res,url,auth}))return;
 
   if(req.method==='POST'&&url==='/api/v1/onboarding'){const a=await requireAuth(req);const payload=onboarding(await readJson(req));const workspace=await createOrUpdateWorkspace({userId:a.user.id,businessName:payload.businessName,email:a.user.email,ownerName:a.user.name,authProvider:'email'});const store=await storeRequired();await store.pool.query(`INSERT INTO bos_workspace_members(workspace_id,user_id,role,status) VALUES($1,$2,'owner','active') ON CONFLICT DO NOTHING`,[workspace.tenantId,a.user.id]);jsonResponse(res,201,{status:'created',tenantId:workspace.tenantId,workspace,requestId});return;}
   if(req.method==='GET'&&url==='/api/v1/workflows'){const a=await requireAuth(req);if(!a.tenantId)throw new Error('WORKSPACE_REQUIRED');const store=await storeRequired();const workflows=await store.repository.all(a.tenantId,'workflow');jsonResponse(res,200,{status:'ok',workflows,requestId});return;}
