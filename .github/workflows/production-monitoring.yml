@@ -3,6 +3,12 @@ name: Production monitoring
 on:
   schedule:
     - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/production-monitoring.yml'
+      - 'scripts/monitor-production.mjs'
+      - 'scripts/check-lighthouse.mjs'
   pull_request:
     paths:
       - '.github/workflows/production-monitoring.yml'
