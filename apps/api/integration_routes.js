@@ -14,7 +14,7 @@ async function audit(pool,workspaceId,userId,action,provider,metadata={}) { awai
 async function handleIntegrationRoute({req,res,url,auth}) {
   if(!url.startsWith('/api/v1/integrations')) return false;
   if(req.method==='GET' && url==='/api/v1/integrations/catalog') return jsonResponse(res,200,{status:'ok',googleClientId:process.env.GOOGLE_CLIENT_ID||null,integrations:getCatalog().map(x=>({...x,configured:x.mode!=='oauth'||Boolean(process.env.GOOGLE_CLIENT_ID)}))});
-  if(!auth) return false;
+  if(!auth) fail('UNAUTHENTICATED',401);
   const store=await getProductionStore(); if(!store) fail('DATABASE_NOT_CONFIGURED',503); const {pool}=store; const workspaceId=auth.tenantId;
   if(req.method==='GET' && url==='/api/v1/integrations') { await requireMember(auth,pool); const r=await pool.query('SELECT id,provider,status,config,connected_at,updated_at,last_error FROM bos_integrations WHERE workspace_id=$1 ORDER BY provider',[workspaceId]); return jsonResponse(res,200,{status:'ok',integrations:r.rows}); }
   await requireWrite(auth,pool);
