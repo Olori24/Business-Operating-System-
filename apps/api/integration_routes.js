@@ -8,7 +8,8 @@ function clean(v, max = 500) { return String(v ?? '').trim().slice(0, max); }
 function fail(message, status = 422) { throw Object.assign(new Error(message), { statusCode: status }); }
 async function body(req) { let raw=''; for await (const chunk of req) raw += chunk; if(raw.length>1_000_000) fail('PAYLOAD_TOO_LARGE',413); try{return raw?JSON.parse(raw):{};}catch{fail('INVALID_JSON',400);} }
 async function member(pool, workspaceId, userId) { const r=await pool.query('SELECT role,status FROM bos_workspace_members WHERE workspace_id=$1 AND user_id=$2',[workspaceId,userId]); return r.rows[0]||null; }
-async function requireWrite(auth,pool){ if(!auth?.tenantId) fail('WORKSPACE_REQUIRED',422); const m=await member(pool,auth.tenantId,auth.user.id); if(!m||m.status!=='active') fail('WORKSPACE_ACCESS_DENIED',403); if(!['owner','admin'].includes(m.role)) fail('INSUFFICIENT_PERMISSIONS',403); return m; }
+async function requireMember(auth,pool){ if(!auth?.tenantId) fail('WORKSPACE_REQUIRED',422); const m=await member(pool,auth.tenantId,auth.user.id); if(!m||m.status!=='active') fail('WORKSPACE_ACCESS_DENIED',403); return m; }
+async function requireWrite(auth,pool){ const m=await requireMember(auth,pool); if(!['owner','admin'].includes(m.role)) fail('INSUFFICIENT_PERMISSIONS',403); return m; }
 async function audit(pool,workspaceId,userId,action,provider,metadata={}) { await pool.query('INSERT INTO bos_audit_logs(id,workspace_id,actor_user_id,action,resource_type,resource_id,metadata) VALUES($1,$2,$3,$4,$5,$6,$7)',[id('audit'),workspaceId,userId,action,'integration',provider,metadata]); }
 async function handleIntegrationRoute({req,res,url,auth}) {
   if(!url.startsWith('/api/v1/integrations')) return false;
@@ -17,9 +18,14 @@ async function handleIntegrationRoute({req,res,url,auth}) {
   if(req.method==='GET' && url==='/api/v1/integrations/catalog') {
     return jsonResponse(res,200,{status:'ok',googleClientId:process.env.GOOGLE_CLIENT_ID||null,integrations:getCatalog().map(x=>({...x,configured:x.mode!=='oauth'||Boolean(process.env.GOOGLE_CLIENT_ID)}))});
   }
-  await requireWrite(auth,pool);
   const workspaceId=auth.tenantId;
-  if(req.method==='GET' && url==='/api/v1/integrations') { const r=await pool.query('SELECT id,provider,status,config,connected_at,updated_at,last_error FROM bos_integrations WHERE workspace_id=$1 ORDER BY provider',[workspaceId]); return jsonResponse(res,200,{status:'ok',integrations:r.rows}); }
+  if(req.method==='GET' && url==='/api/v1/integrations') {
+    await requireMember(auth,pool);
+    const r=await pool.query('SELECT id,provider,status,config,connected_at,updated_at,last_error FROM bos_integrations WHERE workspace_id=$1 ORDER BY provider',[workspaceId]);
+    return jsonResponse(res,200,{status:'ok',integrations:r.rows});
+  }
+  await requireWrite(auth,pool);
+  if(req.method==='POST' && url==='/api/v1/integrations/catalog') return false;
   const testMatch=url.match(/^\/api\/v1\/integrations\/([^/]+)\/test$/);
   if(testMatch && req.method==='POST') {
     const provider=clean(testMatch[1],80); const p=getConnector(provider); if(!p) fail('INTEGRATION_NOT_SUPPORTED',404); const payload=await body(req); let credentials=payload.credentials||null;
