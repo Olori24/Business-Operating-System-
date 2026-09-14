@@ -1,0 +1,93 @@
+const CATALOG = Object.freeze({
+  whatsapp_cloud: {
+    name: 'WhatsApp Cloud', category: 'Messaging', mode: 'credentials',
+    description: 'Send WhatsApp messages from BOS workflows through Meta Cloud API.',
+    capabilities: ['send_message'],
+    fields: [
+      { key: 'accessToken', label: 'Access token', type: 'secret', required: true, help: 'Meta system-user or permanent access token.' },
+      { key: 'phoneNumberId', label: 'Phone number ID', type: 'text', required: true },
+      { key: 'businessAccountId', label: 'Business account ID', type: 'text', required: false },
+      { key: 'graphVersion', label: 'Graph API version', type: 'text', required: false, default: 'v23.0' }
+    ]
+  },
+  resend: {
+    name: 'Email · Resend', category: 'Email', mode: 'credentials',
+    description: 'Send transactional email from BOS workflows using Resend.',
+    capabilities: ['send_email'],
+    fields: [
+      { key: 'apiKey', label: 'Resend API key', type: 'secret', required: true, help: 'Create a restricted API key in Resend.' },
+      { key: 'fromEmail', label: 'From email', type: 'text', required: true, help: 'Use a verified sender/domain.' }
+    ]
+  },
+  paystack: {
+    name: 'Paystack', category: 'Payments', mode: 'credentials',
+    description: 'Connect Nigerian payment operations and verify your Paystack account.',
+    capabilities: ['payment_events', 'verify_transaction'],
+    fields: [{ key: 'secretKey', label: 'Secret key', type: 'secret', required: true, help: 'Use a Paystack secret key. Keep it private.' }]
+  },
+  stripe: {
+    name: 'Stripe', category: 'Payments', mode: 'credentials',
+    description: 'Connect Stripe billing and payment operations to BOS.',
+    capabilities: ['payment_events', 'verify_payment'],
+    fields: [{ key: 'secretKey', label: 'Secret key', type: 'secret', required: true, help: 'Use a Stripe secret key. Keep it private.' }]
+  },
+  google_workspace: {
+    name: 'Google Workspace', category: 'Productivity', mode: 'oauth',
+    description: 'Connect Calendar, Drive and Sheets with Google authorization.',
+    capabilities: ['calendar', 'drive', 'sheets'],
+    fields: []
+  },
+  webhook: {
+    name: 'Webhooks', category: 'Developer tools', mode: 'native',
+    description: 'Receive events and send signed workflow callbacks.',
+    capabilities: ['inbound', 'outbound'],
+    fields: []
+  }
+});
+
+function getCatalog() { return Object.values(CATALOG).map(({ name, category, mode, description, capabilities, fields }) => ({ name, category, mode, description, capabilities, fields })); }
+function getConnector(provider) { return CATALOG[String(provider || '').trim()] || null; }
+
+async function testConnector(provider, credentials = {}, config = {}) {
+  const p = getConnector(provider);
+  if (!p) throw new Error('INTEGRATION_NOT_SUPPORTED');
+  if (p.mode === 'native') return { ok: true, provider, message: 'Native connector is available.' };
+  if (p.mode === 'oauth') {
+    if (!credentials.accessToken) throw new Error('GOOGLE_ACCESS_TOKEN_REQUIRED');
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { authorization: `Bearer ${credentials.accessToken}` } });
+    if (!r.ok) throw new Error('GOOGLE_TOKEN_INVALID');
+    const profile = await r.json();
+    return { ok: true, provider, account: profile.email || profile.sub };
+  }
+  if (provider === 'whatsapp_cloud') {
+    const token = credentials.accessToken;
+    const phoneId = credentials.phoneNumberId;
+    const version = credentials.graphVersion || 'v23.0';
+    const r = await fetch(`https://graph.facebook.com/${encodeURIComponent(version)}/${encodeURIComponent(phoneId)}?fields=display_phone_number,verified_name,quality_rating`, { headers: { authorization: `Bearer ${token}` } });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error?.message || 'WHATSAPP_CONNECTION_FAILED');
+    return { ok: true, provider, account: data.display_phone_number || data.verified_name || phoneId, details: data };
+  }
+  if (provider === 'resend') {
+    const r = await fetch('https://api.resend.com/domains', { headers: { authorization: `Bearer ${credentials.apiKey}` } });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.message || 'RESEND_CONNECTION_FAILED');
+    return { ok: true, provider, account: credentials.fromEmail, details: { domainCount: Array.isArray(data.data) ? data.data.length : 0 } };
+  }
+  if (provider === 'paystack') {
+    const r = await fetch('https://api.paystack.co/balance', { headers: { authorization: `Bearer ${credentials.secretKey}` } });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || data.status === false) throw new Error(data?.message || 'PAYSTACK_CONNECTION_FAILED');
+    return { ok: true, provider, account: 'Paystack account verified' };
+  }
+  if (provider === 'stripe') {
+    const encoded = Buffer.from(`${credentials.secretKey}:`).toString('base64');
+    const r = await fetch('https://api.stripe.com/v1/account', { headers: { authorization: `Basic ${encoded}` } });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error?.message || 'STRIPE_CONNECTION_FAILED');
+    return { ok: true, provider, account: data.business_profile?.name || data.email || data.id, details: { id: data.id, country: data.country, chargesEnabled: data.charges_enabled } };
+  }
+  throw new Error('INTEGRATION_TEST_NOT_IMPLEMENTED');
+}
+
+module.exports = { CATALOG, getCatalog, getConnector, testConnector };
