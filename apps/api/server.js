@@ -14,6 +14,7 @@ const { encryptSecret } = require('../../modules/integrations/secret_store');
 const { sendWhatsAppMessage } = require('../../modules/integrations/whatsapp_cloud');
 const { logger, captureException } = require('../../packages/observability/logger');
 const { handleSaaSRoute } = require('./saas_routes');
+const { handleIntegrationRoute } = require('./integration_routes');
 const { handleWorkflowControl } = require('./workflow_controls');
 const { startProductionWorker } = require('../../modules/automation/production_worker');
 
@@ -63,6 +64,7 @@ async function requestHandler(req,res){recordRequest();const context=requestCont
 
   const auth=await authenticate(req);
   if(await handleWorkflowControl({req,res,url,auth}))return;
+  if(auth && await handleIntegrationRoute({req,res,url,auth}))return;
   if(auth && await handleSaaSRoute({req,res,url,auth}))return;
 
   if(req.method==='POST'&&url==='/api/v1/onboarding'){const a=await requireAuth(req);const payload=onboarding(await readJson(req));const workspace=await createOrUpdateWorkspace({userId:a.user.id,businessName:payload.businessName,email:a.user.email,ownerName:a.user.name,authProvider:'email'});const store=await storeRequired();await store.pool.query(`INSERT INTO bos_workspace_members(workspace_id,user_id,role,status) VALUES($1,$2,'owner','active') ON CONFLICT DO NOTHING`,[workspace.tenantId,a.user.id]);jsonResponse(res,201,{status:'created',tenantId:workspace.tenantId,workspace,requestId});return;}
