@@ -8,6 +8,7 @@
     {"source":"/api/v1/meta","destination":"/api/[...path].js"},
     {"source":"/api/v1/integrations","destination":"/api/[...path].js"},
     {"source":"/api/v1/integrations/:path*","destination":"/api/[...path].js"},
+    {"source":"/api/dashboard/integrations","destination":"/api/[...path].js"},
     {"source":"/","destination":"/index.html"},
     {"source":"/start","destination":"/apps/dashboard/onboarding.html"},
     {"source":"/onboarding","destination":"/apps/dashboard/onboarding.html"},
