@@ -1,5 +1,5 @@
-function graphVersion() {
-  return process.env.WHATSAPP_GRAPH_VERSION || 'v23.0';
+function graphVersion(config) {
+  return config?.graphVersion || process.env.WHATSAPP_GRAPH_VERSION || 'v23.0';
 }
 
 function requireConfig(config) {
@@ -10,7 +10,7 @@ function requireConfig(config) {
 async function sendWhatsAppMessage({ config, to, text }) {
   requireConfig(config);
   if (!to || !text) throw new TypeError('WHATSAPP_RECIPIENT_AND_TEXT_REQUIRED');
-  const response = await fetch(`https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(config.phoneNumberId)}/messages`, {
+  const response = await fetch(`https://graph.facebook.com/${graphVersion(config)}/${encodeURIComponent(config.phoneNumberId)}/messages`, {
     method: 'POST',
     headers: { authorization: `Bearer ${config.accessToken}`, 'content-type': 'application/json' },
     body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: String(to), type: 'text', text: { preview_url: false, body: String(text) } }),
