@@ -1,13 +1,32 @@
-# Business Operating System (BOS)
+<div align="center">
 
-> **The programmable operating layer for modern businesses.**
+# BOS · Business Operating System
 
-![Version](https://img.shields.io/badge/version-v1.0.0-blue)
-![Status](https://img.shields.io/badge/status-production%20SaaS%20foundation-success)
-![Architecture](https://img.shields.io/badge/architecture-modular-success)
-![Multi--Tenant](https://img.shields.io/badge/multi--tenant-ready-success)
-![Node](https://img.shields.io/badge/node-%3E%3D22-green)
-![CI](https://img.shields.io/badge/CI-GitHub%20Actions-success)
+**The programmable operating layer for modern businesses.**
+
+[![Documentation standard](https://img.shields.io/badge/README-Premium%20Standard-111827?style=flat-square)](#documentation-standard)
+[![GitHub](https://img.shields.io/badge/GitHub-Olori24-181717?style=flat-square&logo=github)](https://github.com/Olori24)
+
+</div>
+
+![BOS · Business Operating System architecture overview](./docs/assets/repo-hero.svg)
+
+> **Repository status:** Active development. This README separates implemented repository capabilities from roadmap and environment-dependent work.
+
+## Documentation standard
+
+This repository follows the premium documentation standard established for NSMS: strong product positioning, visual orientation, architecture, security boundaries, setup, validation evidence, maturity tracking, roadmap separation, and honest production-status language.
+
+| Evidence label | Meaning |
+|---|---|
+| **IMPLEMENTED** | Present in the repository. |
+| **TESTED** | Supported by an executed test or CI result. |
+| **DEPLOYED** | A deployment target/configuration exists. |
+| **VERIFIED IN PRODUCTION** | Confirmed with production evidence. |
+| **MEASURED** | Backed by an actual measurement. |
+| **ROADMAP** | Planned work, not a shipped capability. |
+
+The existing project-specific technical documentation below remains the source for detailed implementation information.
 
 ---
 
