@@ -3,7 +3,7 @@
 > **The programmable operating layer for modern businesses.**
 
 ![Version](https://img.shields.io/badge/version-v1.0.0-blue)
-![Status](https://img.shields.io/badge/status-production%20SaaS%20foundation-success)
+![Status](https://img.shields.io/badge/status-active%20development-2563eb)
 ![Architecture](https://img.shields.io/badge/architecture-modular-success)
 ![Multi--Tenant](https://img.shields.io/badge/multi--tenant-ready-success)
 ![Node](https://img.shields.io/badge/node-%3E%3D22-green)
@@ -14,6 +14,8 @@
 ## Overview
 
 **Business Operating System (BOS)** is a modular, multi-tenant SaaS platform for running business operations through configurable workflows, integrations, events, notifications, and durable automation.
+
+> **Repository status:** Active development. Production-readiness claims are separated from implemented repository capabilities and deployment-specific verification.
 
 The core idea is simple:
 
