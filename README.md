@@ -17,6 +17,11 @@
 
 > **Repository status:** Active development. Production-readiness claims are separated from implemented repository capabilities and deployment-specific verification.
 
+## Engineering focus
+
+Durable workflow automation and operational infrastructure for businesses.
+
+
 The core idea is simple:
 
 > **Configure how work should happen once, then let BOS execute it, recover from failures, record what happened, and keep the business in control.**
