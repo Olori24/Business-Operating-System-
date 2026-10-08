@@ -15,7 +15,7 @@
     "test:integration:local": "docker compose -f docker-compose.test.yml up -d db && until docker compose -f docker-compose.test.yml exec -T db pg_isready -U bos -d bos; do sleep 1; done && DATABASE_URL=postgres://bos:bos@localhost:54329/bos node --test packages/persistence/integration/postgres.integration.test.js"
   },
   "dependencies": {
-    "pg": "^8.16.3",
+    "pg": "^8.23.1",
     "pino": "^10.3.1"
   },
   "engines": {
